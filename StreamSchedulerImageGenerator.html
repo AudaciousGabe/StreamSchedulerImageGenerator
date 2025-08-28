@@ -11,6 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        #outerPaddingContainer {
+            background-color: var(--bg-primary);
+        }
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -220,7 +223,7 @@
         }
 
         /* --- THEME-AWARE STYLES --- */
-        .gradient-text { color: var(--header-gradient-start); text-shadow: 0 2px 20px var(--header-glow); }
+    .gradient-text { color: var(--header-gradient-start); text-shadow: none; }
         .theme-btn.active { box-shadow: 0 0 0 3px var(--header-gradient-start); }
         
         .schedule-btn { background-color: var(--btn-inactive-bg); }
@@ -242,7 +245,7 @@
         /* Glowing Panel Style */
         .glowing-panel {
             border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+            box-shadow: none;
         }
 
         /* Emoji Picker */
@@ -1029,12 +1032,12 @@
                             
                             .gradient-text { 
                                 color: var(--header-gradient-start); 
-                                text-shadow: 0 2px 20px var(--header-glow); 
+                                text-shadow: none; 
                             }
                             
                             .glowing-panel {
                                 border: 1px solid rgba(255, 255, 255, 0.3);
-                                box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+                                box-shadow: none;
                             }
                             
                             /* Hide elements we don't want in screenshots */
@@ -1102,107 +1105,145 @@
             });
             
             // --- Export as PNG ---
-            const exportBtn = document.getElementById('exportBtn');
-            exportBtn.addEventListener('click', async () => {
-                const elementToCapture = document.getElementById('outerPaddingContainer');
+            // const exportBtn = document.getElementById('exportBtn');
+            // exportBtn.addEventListener('click', async () => {
+            //     const elementToCapture = document.getElementById('outerPaddingContainer');
                 
-                // Store original state
-                const originalText = exportBtn.textContent;
-                exportBtn.textContent = 'Generating...';
-                exportBtn.disabled = true;
+            //     // Store original state
+            //     const originalText = exportBtn.textContent;
+            //     exportBtn.textContent = 'Generating...';
+            //     exportBtn.disabled = true;
                 
-                try {
-                    // Get computed styles for the current theme
-                    const computedStyles = getComputedStyle(document.body);
-                    const bgColor = computedStyles.getPropertyValue('--bg-primary').trim() || '#111827';
+            //     try {
+            //         // Get computed styles for the current theme
+            //         const computedStyles = getComputedStyle(document.body);
+            //         const bgColor = computedStyles.getPropertyValue('--bg-primary').trim() || '#111827';
                     
-                    // Hide elements that shouldn't be in the export
-                    const elementsToHide = [];
-                    if (!panelScopeToggle.checked) {
-                        const bottomContent = document.getElementById('bottomContent');
-                        if (bottomContent && !bottomContent.classList.contains('hidden')) {
-                            bottomContent.classList.add('hidden');
-                            elementsToHide.push(bottomContent);
-                        }
-                    }
+            //         // Hide elements that shouldn't be in the export
+            //         const elementsToHide = [];
+            //         if (!panelScopeToggle.checked) {
+            //             const bottomContent = document.getElementById('bottomContent');
+            //             if (bottomContent && !bottomContent.classList.contains('hidden')) {
+            //                 bottomContent.classList.add('hidden');
+            //                 elementsToHide.push(bottomContent);
+            //             }
+            //         }
                     
-                    // Simple options without complex style processing
-                    const domToImageOptions = {
-                        quality: 1,
-                        bgcolor: bgColor,
-                        width: elementToCapture.offsetWidth,
-                        height: elementToCapture.scrollHeight,
-                        cacheBust: true,
-                        imagePlaceholder: undefined,
-                        filter: (node) => {
-                            if (!node || !node.tagName) return true;
-                            if (node.tagName === 'SCRIPT') return false;
-                            return true;
-                        }
-                    };
+            //         // Simple options without complex style processing
+            //         const domToImageOptions = {
+            //             quality: 1,
+            //             bgcolor: bgColor,
+            //             width: elementToCapture.offsetWidth,
+            //             height: elementToCapture.scrollHeight,
+            //             cacheBust: true,
+            //             imagePlaceholder: undefined,
+            //             filter: (node) => {
+            //                 if (!node || !node.tagName) return true;
+            //                 if (node.tagName === 'SCRIPT') return false;
+            //                 return true;
+            //             }
+            //         };
 
-                    // Modern Screenshot options
-                    const modernScreenshotOptions = {
-                        backgroundColor: bgColor,
-                        scale: (window.devicePixelRatio || 2),
-                        filter: (node) => {
-                            if (!node || !node.tagName) return true;
-                            if (node.tagName === 'SCRIPT') return false;
-                            return true;
-                        }
-                    };
+            //         // Modern Screenshot options
+            //         const modernScreenshotOptions = {
+            //             backgroundColor: bgColor,
+            //             scale: (window.devicePixelRatio || 2),
+            //             filter: (node) => {
+            //                 if (!node || !node.tagName) return true;
+            //                 if (node.tagName === 'SCRIPT') return false;
+            //                 return true;
+            //             }
+            //         };
                     
-                    // Try Modern Screenshot first, then fall back to dom-to-image-more
-                    let dataUrl;
-                    try {
-                        if (window.modernScreenshot && typeof window.modernScreenshot.domToPng === 'function') {
-                            dataUrl = await window.modernScreenshot.domToPng(elementToCapture, modernScreenshotOptions);
-                        } else {
-                            throw new Error('modern-screenshot not available');
-                        }
-                    } catch (msErr) {
-                        console.warn('Modern Screenshot failed, falling back to dom-to-image-more', msErr);
-                        dataUrl = await domtoimage.toPng(elementToCapture, domToImageOptions);
-                    }
+            //         // Try Modern Screenshot first, then fall back to dom-to-image-more
+            //         let dataUrl;
+            //         try {
+            //             if (window.modernScreenshot && typeof window.modernScreenshot.domToPng === 'function') {
+            //                 dataUrl = await window.modernScreenshot.domToPng(elementToCapture, modernScreenshotOptions);
+            //             } else {
+            //                 throw new Error('modern-screenshot not available');
+            //             }
+            //         } catch (msErr) {
+            //             console.warn('Modern Screenshot failed, falling back to dom-to-image-more', msErr);
+            //             dataUrl = await domtoimage.toPng(elementToCapture, domToImageOptions);
+            //         }
                     
-                    // Restore hidden elements
-                    elementsToHide.forEach(el => el.classList.remove('hidden'));
+            //         // Restore hidden elements
+            //         elementsToHide.forEach(el => el.classList.remove('hidden'));
                     
-                    // Create download link
-                    const link = document.createElement('a');
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-                    link.download = `stream_schedule_${timestamp}.png`;
-                    link.href = dataUrl;
-                    link.click();
+            //         // Create download link
+            //         const link = document.createElement('a');
+            //         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            //         link.download = `stream_schedule_${timestamp}.png`;
+            //         link.href = dataUrl;
+            //         link.click();
                     
-                    // Restore button state
-                    exportBtn.textContent = 'Downloaded!';
-                    setTimeout(() => {
-                        exportBtn.textContent = originalText;
-                        exportBtn.disabled = false;
-                    }, 2000);
+            //         // Restore button state
+            //         exportBtn.textContent = 'Downloaded!';
+            //         setTimeout(() => {
+            //             exportBtn.textContent = originalText;
+            //             exportBtn.disabled = false;
+            //         }, 2000);
                     
-                } catch (error) {
-                    console.error('Error generating screenshot:', error);
+            //     } catch (error) {
+            //         console.error('Error generating screenshot:', error);
                     
-                    // Restore any hidden elements on error
-                    const bottomContent = document.getElementById('bottomContent');
-                    if (bottomContent && bottomContent.classList.contains('hidden') && panelScopeToggle.checked) {
-                        bottomContent.classList.remove('hidden');
-                    }
+            //         // Restore any hidden elements on error
+            //         const bottomContent = document.getElementById('bottomContent');
+            //         if (bottomContent && bottomContent.classList.contains('hidden') && panelScopeToggle.checked) {
+            //             bottomContent.classList.remove('hidden');
+            //         }
                     
-                    exportBtn.textContent = 'Error - Try Again';
-                    exportBtn.disabled = false;
-                    setTimeout(() => {
-                        exportBtn.textContent = originalText;
-                    }, 3000);
-                }
-            });
+            //         exportBtn.textContent = 'Error - Try Again';
+            //         exportBtn.disabled = false;
+            //         setTimeout(() => {
+            //             exportBtn.textContent = originalText;
+            //         }, 3000);
+            //     }
+            // });
 
             // Initial generation
             generateDiscordMessage();
         });
     </script>
-
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+    document.getElementById('exportBtn').addEventListener('click', function () {
+        const download = () => {
+            html2canvas(document.querySelector('#outerPaddingContainer')).then(canvas => {
+                let backgroundColor = getComputedStyle(document.querySelector('#outerPaddingContainer')).backgroundColor;
+                // If the color is transparent or semi-transparent, use a solid fallback
+                function isTransparentOrSemi(color) {
+                    if (!color) return true;
+                    if (color.startsWith('rgba')) {
+                        const alpha = parseFloat(color.split(',')[3]);
+                        return isNaN(alpha) || alpha < 1;
+                    }
+                    if (color === 'transparent') return true;
+                    return false;
+                }
+                if (isTransparentOrSemi(backgroundColor)) {
+                    backgroundColor = '#111827'; // fallback to twilight solid
+                }
+                // Create a new canvas with the same size
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = canvas.width;
+                finalCanvas.height = canvas.height;
+                const ctx = finalCanvas.getContext('2d');
+                // Fill with background color
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+                // Draw the original canvas on top
+                ctx.drawImage(canvas, 0, 0);
+                // Download
+                const link = document.createElement('a');
+                link.download = `stream_schedule_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+                link.href = finalCanvas.toDataURL();
+                link.click();
+            });
+        };
+        download();
+    });
+</script>
 </body>
 </html>
