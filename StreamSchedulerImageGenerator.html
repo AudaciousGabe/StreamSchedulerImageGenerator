@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Schedule</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/modern-screenshot/dist/modern-screenshot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.0/dist/dom-to-image-more.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -685,8 +686,15 @@
             <div class="p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
                 <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Export Schedule</h3>
                 <div class="space-y-3">
-                    <button id="screenshotModeBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Open for Screenshot</button>
-                    <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Download as PNG (Beta)</button>
+                    <button id="screenshotModeBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        📸 Open for Screenshot (Recommended)
+                    </button>
+                    <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        ⚠️ Direct Download PNG (Known Issues)
+                    </button>
+                    <p class="text-xs text-center text-[var(--text-muted)] mt-2">
+                        Note: Screenshot mode provides best quality. Direct download may have rendering issues.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1106,90 +1114,65 @@
                 try {
                     // Get computed styles for the current theme
                     const computedStyles = getComputedStyle(document.body);
-                    const bgColor = computedStyles.getPropertyValue('--bg-primary').trim();
+                    const bgColor = computedStyles.getPropertyValue('--bg-primary').trim() || '#111827';
                     
-                    // Clone the element to avoid modifying the original
-                    const clonedElement = elementToCapture.cloneNode(true);
-                    
-                    // Create a temporary container
-                    const tempContainer = document.createElement('div');
-                    tempContainer.style.position = 'absolute';
-                    tempContainer.style.left = '-9999px';
-                    tempContainer.style.top = '0';
-                    tempContainer.style.width = elementToCapture.offsetWidth + 'px';
-                    
-                    // Apply inline styles to preserve theme colors
-                    const applyInlineStyles = (element, original) => {
-                        const styles = window.getComputedStyle(original);
-                        const importantProps = [
-                            'background-color', 'color', 'border-color', 'border-width', 
-                            'border-style', 'border-radius', 'padding', 'margin', 
-                            'font-size', 'font-weight', 'font-family', 'text-align',
-                            'display', 'flex-direction', 'justify-content', 'align-items',
-                            'gap', 'width', 'height', 'box-shadow', 'opacity'
-                        ];
-                        
-                        importantProps.forEach(prop => {
-                            if (styles[prop] && styles[prop] !== 'none' && styles[prop] !== '0px') {
-                                element.style[prop] = styles[prop];
-                            }
-                        });
-                        
-                        // Handle CSS variables
-                        if (element.style.backgroundColor && element.style.backgroundColor.includes('var(')) {
-                            element.style.backgroundColor = styles.backgroundColor;
+                    // Hide elements that shouldn't be in the export
+                    const elementsToHide = [];
+                    if (!panelScopeToggle.checked) {
+                        const bottomContent = document.getElementById('bottomContent');
+                        if (bottomContent && !bottomContent.classList.contains('hidden')) {
+                            bottomContent.classList.add('hidden');
+                            elementsToHide.push(bottomContent);
                         }
-                        if (element.style.color && element.style.color.includes('var(')) {
-                            element.style.color = styles.color;
-                        }
-                        if (element.style.borderColor && element.style.borderColor.includes('var(')) {
-                            element.style.borderColor = styles.borderColor;
+                    }
+                    
+                    // Simple options without complex style processing
+                    const domToImageOptions = {
+                        quality: 1,
+                        bgcolor: bgColor,
+                        width: elementToCapture.offsetWidth,
+                        height: elementToCapture.scrollHeight,
+                        cacheBust: true,
+                        imagePlaceholder: undefined,
+                        filter: (node) => {
+                            if (!node || !node.tagName) return true;
+                            if (node.tagName === 'SCRIPT') return false;
+                            return true;
                         }
                     };
-                    
-                    // Apply inline styles recursively
-                    const processElement = (cloned, original) => {
-                        applyInlineStyles(cloned, original);
-                        const clonedChildren = cloned.children;
-                        const originalChildren = original.children;
-                        for (let i = 0; i < clonedChildren.length; i++) {
-                            if (originalChildren[i]) {
-                                processElement(clonedChildren[i], originalChildren[i]);
-                            }
-                        }
-                    };
-                    
-                    processElement(clonedElement, elementToCapture);
-                    
-                    // Add the cloned element to the page temporarily
-                    tempContainer.appendChild(clonedElement);
-                    document.body.appendChild(tempContainer);
-                    
-                    // Take screenshot with html2canvas
-                    const canvas = await html2canvas(clonedElement, {
+
+                    // Modern Screenshot options
+                    const modernScreenshotOptions = {
                         backgroundColor: bgColor,
-                        scale: 2, // Higher quality
-                        logging: false,
-                        useCORS: true,
-                        allowTaint: true,
-                        windowWidth: elementToCapture.scrollWidth,
-                        windowHeight: elementToCapture.scrollHeight,
-                        onclone: (clonedDoc) => {
-                            // Additional processing if needed
-                            const clonedBody = clonedDoc.body;
-                            clonedBody.style.margin = '0';
-                            clonedBody.style.padding = '0';
+                        scale: (window.devicePixelRatio || 2),
+                        filter: (node) => {
+                            if (!node || !node.tagName) return true;
+                            if (node.tagName === 'SCRIPT') return false;
+                            return true;
                         }
-                    });
+                    };
                     
-                    // Remove temporary container
-                    document.body.removeChild(tempContainer);
+                    // Try Modern Screenshot first, then fall back to dom-to-image-more
+                    let dataUrl;
+                    try {
+                        if (window.modernScreenshot && typeof window.modernScreenshot.domToPng === 'function') {
+                            dataUrl = await window.modernScreenshot.domToPng(elementToCapture, modernScreenshotOptions);
+                        } else {
+                            throw new Error('modern-screenshot not available');
+                        }
+                    } catch (msErr) {
+                        console.warn('Modern Screenshot failed, falling back to dom-to-image-more', msErr);
+                        dataUrl = await domtoimage.toPng(elementToCapture, domToImageOptions);
+                    }
                     
-                    // Download the image
+                    // Restore hidden elements
+                    elementsToHide.forEach(el => el.classList.remove('hidden'));
+                    
+                    // Create download link
                     const link = document.createElement('a');
                     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
                     link.download = `stream_schedule_${timestamp}.png`;
-                    link.href = canvas.toDataURL('image/png');
+                    link.href = dataUrl;
                     link.click();
                     
                     // Restore button state
@@ -1201,6 +1184,13 @@
                     
                 } catch (error) {
                     console.error('Error generating screenshot:', error);
+                    
+                    // Restore any hidden elements on error
+                    const bottomContent = document.getElementById('bottomContent');
+                    if (bottomContent && bottomContent.classList.contains('hidden') && panelScopeToggle.checked) {
+                        bottomContent.classList.remove('hidden');
+                    }
+                    
                     exportBtn.textContent = 'Error - Try Again';
                     exportBtn.disabled = false;
                     setTimeout(() => {
