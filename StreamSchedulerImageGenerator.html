@@ -11,6 +11,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Improve html2canvas compatibility: force line-height and overflow for all children of #outerPaddingContainer */
+        /* Only apply to timestamp containers */
+        .timestamp-box {
+            line-height: 1.2;
+            overflow: hidden;
+        }
         #outerPaddingContainer {
             background-color: var(--bg-primary);
         }
@@ -303,7 +309,7 @@
                         <div id="normalDayScheduleToday" class="space-y-4">
                             <!-- Time Slot 1 -->
                             <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
-                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 h-12 text-center w-48 flex items-center justify-center">
                                     <p>9:30 AM - 12:30 PM</p>
                                 </div>
                                 <div>
@@ -378,7 +384,7 @@
                         <div id="normalDayScheduleTomorrow" class="space-y-4 hidden">
                             <!-- Time Slot 1 -->
                             <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
-                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 h-12 text-center w-48 flex items-center justify-center">
                                     <p>9:30 AM - 12:30 PM</p>
                                 </div>
                                 <div>
@@ -1206,43 +1212,162 @@
             generateDiscordMessage();
         });
     </script>
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 <script>
-    document.getElementById('exportBtn').addEventListener('click', function () {
-        const download = () => {
-            html2canvas(document.querySelector('#outerPaddingContainer')).then(canvas => {
-                let backgroundColor = getComputedStyle(document.querySelector('#outerPaddingContainer')).backgroundColor;
-                // If the color is transparent or semi-transparent, use a solid fallback
-                function isTransparentOrSemi(color) {
-                    if (!color) return true;
-                    if (color.startsWith('rgba')) {
-                        const alpha = parseFloat(color.split(',')[3]);
-                        return isNaN(alpha) || alpha < 1;
-                    }
-                    if (color === 'transparent') return true;
-                    return false;
+    document.getElementById('exportBtn').addEventListener('click', async function () {
+        const exportBtn = this;
+        // Ensure fonts are loaded for correct metrics
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch {}
+        }
+        const elementToCapture = document.getElementById('outerPaddingContainer');
+        const bgVar = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+        const backgroundColor = bgVar || '#111827';
+        const elementsToHide = [];
+
+        // Reflect current panel scope (hide bottomContent if Today Only)
+        try {
+            const panelScopeToggle = document.getElementById('panelScopeToggle');
+            if (panelScopeToggle && !panelScopeToggle.checked) {
+                const bottomContent = document.getElementById('bottomContent');
+                if (bottomContent && !bottomContent.classList.contains('hidden')) {
+                    bottomContent.classList.add('hidden');
+                    elementsToHide.push(bottomContent);
                 }
-                if (isTransparentOrSemi(backgroundColor)) {
-                    backgroundColor = '#111827'; // fallback to twilight solid
-                }
-                // Create a new canvas with the same size
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = canvas.width;
-                finalCanvas.height = canvas.height;
-                const ctx = finalCanvas.getContext('2d');
-                // Fill with background color
-                ctx.fillStyle = backgroundColor;
-                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-                // Draw the original canvas on top
-                ctx.drawImage(canvas, 0, 0);
-                // Download
-                const link = document.createElement('a');
-                link.download = `stream_schedule_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-                link.href = finalCanvas.toDataURL();
-                link.click();
-            });
+            }
+        } catch {}
+
+        // Disable button during export
+        const originalText = exportBtn.textContent;
+        exportBtn.textContent = 'Generating...';
+        exportBtn.disabled = true;
+
+        // Export-only: remove backdrop filters and flatten semi-transparent backgrounds/borders
+        const modified = [];
+        const parseColor = (str) => {
+            if (!str) return null; const m = str.match(/rgba?\(([^)]+)\)/); if (m){ const p=m[1].split(',').map(s=>parseFloat(s)); return {r:p[0],g:p[1],b:p[2],a:p[3]??1};}
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(str)){ let hex=str.slice(1); if(hex.length===3){hex=hex.split('').map(c=>c+c).join('');} return {r:parseInt(hex.slice(0,2),16),g:parseInt(hex.slice(2,4),16),b:parseInt(hex.slice(4,6),16),a:1}; }
+            return null;
         };
-        download();
+        const toHex = ({r,g,b}) => `#${[r,g,b].map(n=>Math.round(n).toString(16).padStart(2,'0')).join('')}`;
+        const blend = (fg, bg) => { const a=fg.a+bg.a*(1-fg.a); return { r:(fg.r*fg.a+bg.r*bg.a*(1-fg.a))/a, g:(fg.g*fg.a+bg.g*bg.a*(1-fg.a))/a, b:(fg.b*fg.a+bg.b*bg.a*(1-fg.a))/a, a}; };
+        const base = parseColor(backgroundColor) || {r:17,g:24,b:39,a:1};
+        const getNearestSolidBg = (el) => {
+            let cur = el;
+            while (cur && cur !== elementToCapture.parentElement) {
+                const cs = getComputedStyle(cur);
+                const bgc = parseColor(cs.backgroundColor);
+                if (bgc && bgc.a > 0) return bgc;
+                cur = cur.parentElement;
+            }
+            return base;
+        };
+        elementToCapture.querySelectorAll('*').forEach(el => {
+            const cs = getComputedStyle(el);
+            if ((cs.backdropFilter && cs.backdropFilter!=='none') || (cs.webkitBackdropFilter && cs.webkitBackdropFilter!=='none')){
+                modified.push({el, prop:'backdropFilter', prev: el.style.backdropFilter});
+                modified.push({el, prop:'webkitBackdropFilter', prev: el.style.webkitBackdropFilter});
+                el.style.backdropFilter='none'; el.style.webkitBackdropFilter='none';
+            }
+            const bgc = parseColor(cs.backgroundColor);
+            if (bgc && bgc.a<1){
+                const under = getNearestSolidBg(el.parentElement || elementToCapture);
+                const blended = blend(bgc, under);
+                modified.push({el, prop:'backgroundColor', prev: el.style.backgroundColor});
+                el.style.backgroundColor = toHex(blended);
+            }
+            // Flatten semi-transparent border colors on all sides
+            const sides = ['Top','Right','Bottom','Left'];
+            const anyBorder = sides.some(s => cs[`border${s}Width`] && cs[`border${s}Width`] !== '0px');
+            if (anyBorder) {
+                const under = getNearestSolidBg(el.parentElement || elementToCapture);
+                sides.forEach(side => {
+                    const col = parseColor(cs[`border${side}Color`]);
+                    const w = cs[`border${side}Width`];
+                    if (w && w !== '0px' && col && col.a < 1) {
+                        const blended = blend(col, under);
+                        const hex = toHex(blended);
+                        const prop = `border${side}Color`;
+                        modified.push({el, prop, prev: el.style[prop]});
+                        el.style[prop] = hex;
+                    }
+                });
+            }
+            // Temporarily hide outlines if any
+            if (cs.outlineStyle && cs.outlineStyle !== 'none') {
+                modified.push({el, prop:'outline', prev: el.style.outline});
+                el.style.outline = 'none';
+            }
+        });
+
+        let dataUrl;
+        try {
+            // Try html-to-image first
+            if (window.htmlToImage && typeof window.htmlToImage.toPng === 'function') {
+                try {
+                    dataUrl = await window.htmlToImage.toPng(elementToCapture, {
+                        pixelRatio: 3,
+                        cacheBust: true,
+                        backgroundColor,
+                        filter: (node) => {
+                            if (!node || !node.tagName) return true;
+                            if (node.tagName === 'SCRIPT') return false;
+                            return true;
+                        }
+                    });
+                } catch (e) {
+                    // continue to other methods
+                }
+            }
+
+            // Then try modern-screenshot
+            if (!dataUrl) {
+                try {
+                    if (window.modernScreenshot && typeof window.modernScreenshot.domToPng === 'function') {
+                        dataUrl = await window.modernScreenshot.domToPng(elementToCapture, {
+                            backgroundColor,
+                            scale: (window.devicePixelRatio || 2)
+                        });
+                    } else {
+                        throw new Error('modern-screenshot not available');
+                    }
+                } catch (msErr) {
+                    // Fallback to dom-to-image-more
+                    try {
+                        dataUrl = await domtoimage.toPng(elementToCapture, {
+                            bgcolor: backgroundColor,
+                            width: elementToCapture.offsetWidth,
+                            height: elementToCapture.scrollHeight,
+                            cacheBust: true,
+                            imagePlaceholder: undefined,
+                            filter: (node) => {
+                                if (!node || !node.tagName) return true;
+                                if (node.tagName === 'SCRIPT') return false;
+                                return true;
+                            }
+                        });
+                    } catch (dtiErr) {
+                        console.error('Export failed', msErr, dtiErr);
+                        throw dtiErr;
+                    }
+                }
+            }
+
+            const link = document.createElement('a');
+            link.download = `stream_schedule_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+            link.href = dataUrl;
+            link.click();
+            exportBtn.textContent = 'Downloaded!';
+            setTimeout(() => { exportBtn.textContent = originalText; exportBtn.disabled = false; }, 1500);
+        } catch (err) {
+            exportBtn.textContent = 'Error - Try Again';
+            setTimeout(() => { exportBtn.textContent = originalText; exportBtn.disabled = false; }, 2000);
+        } finally {
+            // Restore styles and hidden elements
+            modified.forEach(({el, prop, prev}) => { el.style[prop] = prev; });
+            elementsToHide.forEach(el => el.classList.remove('hidden'));
+            if (!exportBtn.disabled) exportBtn.disabled = false;
+        }
     });
 </script>
 </body>
