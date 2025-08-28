@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Schedule</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- THEME DEFINITIONS --- */
+        :root, .theme-twilight {
+            --bg-primary: #111827;
+            --bg-secondary: rgba(31, 41, 55, 0.5);
+            --border-primary: rgba(55, 65, 81, 0.5);
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --text-muted: #6b7280;
+            --header-gradient-start: #c084fc;
+            --header-gradient-end: #67e8f9;
+            --header-glow: rgba(192, 132, 252, 0.3);
+            --today-accent: #a78bfa;
+            --today-accent-bg: rgba(167, 139, 250, 0.2);
+            --today-header: #67e8f9;
+            --today-header-border: rgba(103, 232, 249, 0.3);
+            --tomorrow-bg: rgba(124, 58, 237, 0.4);
+            --tomorrow-border: rgba(139, 92, 246, 0.5);
+            --tomorrow-accent-bg: rgba(167, 139, 250, 0.2);
+            --tomorrow-text: #ddd6fe;
+            --tomorrow-header: #6ee7b7;
+            --tomorrow-header-border: rgba(110, 231, 183, 0.3);
+            /* UI Controls */
+            --input-bg: #374151;
+            --input-border: #4b5563;
+            --btn-active-bg: #9333ea;
+            --btn-inactive-bg: #4b5563;
+            --tab-active-bg: #581c87;
+            --tab-active-text: #f0abfc;
+        }
+
+        .theme-sunrise {
+            --bg-primary: #1c1917;
+            --bg-secondary: rgba(41, 37, 36, 0.5);
+            --border-primary: rgba(68, 64, 60, 0.5);
+            --text-primary: #fff7ed;
+            --text-secondary: #fed7aa;
+            --text-muted: #fde68a;
+            --header-gradient-start: #f97316;
+            --header-gradient-end: #ef4444;
+            --header-glow: rgba(249, 115, 22, 0.3);
+            --today-accent: #fb923c;
+            --today-accent-bg: rgba(251, 146, 60, 0.1);
+            --today-header: #fb923c;
+            --today-header-border: rgba(251, 146, 60, 0.3);
+            --tomorrow-bg: rgba(239, 68, 68, 0.2);
+            --tomorrow-border: rgba(239, 68, 68, 0.4);
+            --tomorrow-accent-bg: rgba(248, 113, 113, 0.15);
+            --tomorrow-text: #fca5a5;
+            --tomorrow-header: #f87171;
+            --tomorrow-header-border: rgba(248, 113, 113, 0.3);
+            /* UI Controls */
+            --input-bg: #292524;
+            --input-border: #44403c;
+            --btn-active-bg: #ea580c;
+            --btn-inactive-bg: #57534e;
+            --tab-active-bg: #431407;
+            --tab-active-text: #fdba74;
+        }
+        
+        .theme-forest {
+            --bg-primary: #052e16; /* Darker Green for better contrast */
+            --bg-secondary: rgba(22, 101, 52, 0.5);
+            --border-primary: rgba(20, 83, 45, 0.5);
+            --text-primary: #f0fdf4;
+            --text-secondary: #bbf7d0;
+            --text-muted: #86efac;
+            --header-gradient-start: #fde047;
+            --header-gradient-end: #bef264;
+            --header-glow: rgba(253, 224, 71, 0.2);
+            --today-accent: #fde047;
+            --today-accent-bg: rgba(253, 224, 71, 0.1);
+            --today-header: #bef264;
+            --today-header-border: rgba(190, 242, 100, 0.3);
+            --tomorrow-bg: rgba(132, 204, 22, 0.2);
+            --tomorrow-border: rgba(132, 204, 22, 0.4);
+            --tomorrow-accent-bg: rgba(234, 179, 8, 0.15);
+            --tomorrow-text: #fde047;
+            --tomorrow-header: #a3e635;
+            --tomorrow-header-border: rgba(163, 230, 53, 0.3);
+            /* UI Controls */
+            --input-bg: #166534;
+            --input-border: #15803d;
+            --btn-active-bg: #ca8a04;
+            --btn-inactive-bg: #15803d;
+            --tab-active-bg: #f7fee7;
+            --tab-active-text: #4d7c0f;
+        }
+
+        .theme-oceanic {
+            --bg-primary: #0c2d48;
+            --bg-secondary: rgba(20, 69, 107, 0.5);
+            --border-primary: rgba(20, 69, 107, 0.5);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --header-gradient-start: #2dd4bf;
+            --header-gradient-end: #7dd3fc;
+            --header-glow: rgba(45, 212, 191, 0.3);
+            --today-accent: #facc15;
+            --today-accent-bg: rgba(250, 204, 21, 0.1);
+            --today-header: #7dd3fc;
+            --today-header-border: rgba(125, 211, 252, 0.3);
+            --tomorrow-bg: rgba(20, 184, 166, 0.2);
+            --tomorrow-border: rgba(20, 184, 166, 0.4);
+            --tomorrow-accent-bg: rgba(20, 184, 166, 0.15);
+            --tomorrow-text: #5eead4;
+            --tomorrow-header: #2dd4bf;
+            --tomorrow-header-border: rgba(45, 212, 191, 0.3);
+            /* UI Controls */
+            --input-bg: #1e40af;
+            --input-border: #1d4ed8;
+            --btn-active-bg: #0ea5e9;
+            --btn-inactive-bg: #1e40af;
+            --tab-active-bg: #e0f2fe;
+            --tab-active-text: #0369a1;
+        }
+
+        .theme-cyberpunk {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: rgba(23, 23, 23, 0.5);
+            --border-primary: rgba(38, 38, 38, 0.5);
+            --text-primary: #ffffff;
+            --text-secondary: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --header-gradient-start: #f472b6;
+            --header-gradient-end: #38bdf8;
+            --header-glow: rgba(244, 114, 182, 0.3);
+            --today-accent: #fde047;
+            --today-accent-bg: rgba(253, 224, 71, 0.1);
+            --today-header: #f472b6;
+            --today-header-border: rgba(244, 114, 182, 0.3);
+            --tomorrow-bg: rgba(34, 211, 238, 0.2);
+            --tomorrow-border: rgba(34, 211, 238, 0.4);
+            --tomorrow-accent-bg: rgba(34, 211, 238, 0.15);
+            --tomorrow-text: #67e8f9;
+            --tomorrow-header: #22d3ee;
+            --tomorrow-header-border: rgba(34, 211, 238, 0.3);
+            /* UI Controls */
+            --input-bg: #171717;
+            --input-border: #262626;
+            --btn-active-bg: #db2777;
+            --btn-inactive-bg: #262626;
+            --tab-active-bg: #fbcfe8;
+            --tab-active-text: #9d174d;
+        }
+
+        .theme-pastel {
+            --bg-primary: #2a2a3e;
+            --bg-secondary: rgba(67, 56, 202, 0.2);
+            --border-primary: rgba(99, 102, 241, 0.3);
+            --text-primary: #e0e7ff;
+            --text-secondary: #c7d2fe;
+            --text-muted: #a5b4fc;
+            --header-gradient-start: #f9a8d4;
+            --header-gradient-end: #a5b4fc;
+            --header-glow: rgba(249, 168, 212, 0.4);
+            --today-accent: #f9a8d4;
+            --today-accent-bg: rgba(249, 168, 212, 0.1);
+            --today-header: #f9a8d4;
+            --today-header-border: rgba(249, 168, 212, 0.5);
+            --tomorrow-bg: rgba(165, 180, 252, 0.2);
+            --tomorrow-border: rgba(165, 180, 252, 0.4);
+            --tomorrow-accent-bg: rgba(165, 180, 252, 0.15);
+            --tomorrow-text: #c7d2fe;
+            --tomorrow-header: #a5b4fc;
+            --tomorrow-header-border: rgba(165, 180, 252, 0.5);
+            /* UI Controls */
+            --input-bg: #312e81;
+            --input-border: #4338ca;
+            --btn-active-bg: #ec4899;
+            --btn-inactive-bg: #6366f1;
+            --tab-active-bg: #312e81;
+            --tab-active-text: #fbcfe8;
+        }
+
+        .theme-arctic {
+            --bg-primary: #0f172a;
+            --bg-secondary: rgba(30, 58, 138, 0.3);
+            --border-primary: rgba(59, 130, 246, 0.3);
+            --text-primary: #f0f9ff;
+            --text-secondary: #bae6fd;
+            --text-muted: #7dd3fc;
+            --header-gradient-start: #06b6d4;
+            --header-gradient-end: #dbeafe;
+            --header-glow: rgba(6, 182, 212, 0.4);
+            --today-accent: #38bdf8;
+            --today-accent-bg: rgba(56, 189, 248, 0.15);
+            --today-header: #0ea5e9;
+            --today-header-border: rgba(14, 165, 233, 0.4);
+            --tomorrow-bg: rgba(147, 197, 253, 0.2);
+            --tomorrow-border: rgba(147, 197, 253, 0.4);
+            --tomorrow-accent-bg: rgba(224, 242, 254, 0.2);
+            --tomorrow-text: #e0f2fe;
+            --tomorrow-header: #7dd3fc;
+            --tomorrow-header-border: rgba(125, 211, 252, 0.4);
+            /* UI Controls */
+            --input-bg: #1e3a8a;
+            --input-border: #2563eb;
+            --btn-active-bg: #0284c7;
+            --btn-inactive-bg: #1e40af;
+            --tab-active-bg: #dbeafe;
+            --tab-active-text: #075985;
+        }
+
+        /* --- THEME-AWARE STYLES --- */
+        .gradient-text { color: var(--header-gradient-start); text-shadow: 0 2px 20px var(--header-glow); }
+        .theme-btn.active { box-shadow: 0 0 0 3px var(--header-gradient-start); }
+        
+        .schedule-btn { background-color: var(--btn-inactive-bg); }
+        .schedule-btn.active { background-color: var(--btn-active-bg); }
+        
+        .editor-tab { color: var(--text-secondary); }
+        .editor-tab.active { background-color: var(--tab-active-bg); color: var(--tab-active-text); }
+        
+        .editor-input { background-color: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-primary); }
+        .editor-input::placeholder { color: var(--text-muted); }
+        .editor-input:focus { outline: 2px solid var(--header-gradient-start); border-color: transparent; }
+
+        /* Custom styles for range sliders */
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #374151; border-radius: 9999px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #818cf8; cursor: pointer; border-radius: 50%; }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #818cf8; cursor: pointer; border-radius: 50%; }
+
+        /* Glowing Panel Style */
+        .glowing-panel {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Emoji Picker */
+        #emojiPicker {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 8px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.25rem;
+            width: 200px;
+        }
+        .emoji-btn {
+            cursor: pointer;
+            font-size: 1.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+        .emoji-btn:hover {
+            background-color: var(--btn-inactive-bg);
+        }
+    </style>
+</head>
+<body class="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300">
+
+    <div class="container mx-auto max-w-5xl">
+        <!-- Wrapper for Outer Padding -->
+        <div id="outerPaddingContainer">
+            <div id="masterPanel" class="glowing-panel rounded-2xl bg-transparent">
+                <!-- Header/Title -->
+                <header class="text-center mb-10">
+                    <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl py-8 px-4 border border-[var(--border-primary)]">
+                        <h1 class="text-5xl sm:text-6xl font-extrabold tracking-tight gradient-text">
+                            Audacious Gabe
+                        </h1>
+                        <a href="https://www.twitch.tv/audaciousgabe" class="text-[var(--today-header)] hover:opacity-80 transition-opacity mt-3 text-lg inline-block">
+                            twitch.tv/audaciousgabe
+                        </a>
+                    </div>
+                </header>
+
+                <main class="space-y-12">
+                     <!-- Today's Schedule -->
+                    <div id="todaySection">
+                        <h2 id="todayTitle" class="text-2xl font-bold text-[var(--today-header)] border-b-2 border-[var(--today-header-border)] pb-2 mb-6">
+                            Today's Stream
+                        </h2>
+                        <!-- Container for the Normal Day Schedule -->
+                        <div id="normalDayScheduleToday" class="space-y-4">
+                            <!-- Time Slot 1 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:30 AM - 12:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayNormalSlot1Title" class="text-xl font-semibold text-[var(--text-primary)]">Morning Warmup</h3>
+                                    <p id="todayNormalSlot1Desc" class="text-[var(--text-secondary)] mt-1">Clearing admin tasks, then jumping into chill development.</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 2 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>1:00 PM - 4:00 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayNormalSlot2Title" class="text-xl font-semibold text-[var(--text-primary)]">Focused Development + Prototype Speedrun</h3>
+                                    <p id="todayNormalSlot2Desc" class="text-[var(--text-secondary)] mt-1">Getting stuff done and making things happen ✨👏</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 3 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>5:00 PM - 8:00 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayNormalSlot3Title" class="text-xl font-semibold text-[var(--text-primary)]">Greenlight Development</h3>
+                                    <p id="todayNormalSlot3Desc" class="text-[var(--text-secondary)] mt-1">You picked it, now we're building it.</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 4 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:00 PM - 12:00 AM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayNormalSlot4Title" class="text-xl font-semibold text-[var(--text-primary)]">Late Night Admin</h3>
+                                    <p id="todayNormalSlot4Desc" class="text-[var(--text-secondary)] mt-1">Winding down with some chill development.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Container for the Work Day Schedule (initially hidden) -->
+                        <div id="workDayScheduleToday" class="space-y-4 hidden">
+                             <!-- Work Block 1 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:30 AM - 12:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayWorkSlot1Title" class="text-xl font-semibold text-[var(--text-primary)]">Morning Warmup</h3>
+                                    <p id="todayWorkSlot1Desc" class="text-[var(--text-secondary)] mt-1">Clearing admin tasks, then jumping into chill development.</p>
+                                </div>
+                            </div>
+                            <!-- Work Block 2 -->
+                            <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl p-5 border border-[var(--border-primary)] flex items-center gap-4">
+                                <div class="bg-[var(--today-accent-bg)] text-[var(--today-accent)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>12:30 PM - 3:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="todayWorkSlot2Title" class="text-xl font-semibold text-[var(--text-primary)]">Focused Development + Prototype Speedrun</h3>
+                                    <p id="todayWorkSlot2Desc" class="text-[var(--text-secondary)] mt-1">Getting stuff done and making things happen ✨👏</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                
+                <div id="bottomContent">
+                    <!-- Tomorrow's Schedule -->
+                    <div class="mt-12">
+                        <h2 id="tomorrowTitle" class="text-2xl font-bold text-[var(--tomorrow-header)] border-b-2 border-[var(--tomorrow-header-border)] pb-2 mb-6">
+                            Tomorrow's Stream
+                        </h2>
+                         <!-- Container for the Normal Day Schedule (initially hidden) -->
+                        <div id="normalDayScheduleTomorrow" class="space-y-4 hidden">
+                            <!-- Time Slot 1 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:30 AM - 12:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowNormalSlot1Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Morning Warmup</h3>
+                                    <p id="tomorrowNormalSlot1Desc" class="text-[var(--text-secondary)] mt-1">Clearing admin tasks, then jumping into chill development.</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 2 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>1:00 PM - 4:00 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowNormalSlot2Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Focused Development + Prototype Speedrun</h3>
+                                    <p id="tomorrowNormalSlot2Desc" class="text-[var(--text-secondary)] mt-1">Getting stuff done and making things happen ✨👏</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 3 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>5:00 PM - 8:00 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowNormalSlot3Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Greenlight Development</h3>
+                                    <p id="tomorrowNormalSlot3Desc" class="text-[var(--text-secondary)] mt-1">You picked it, now we're building it.</p>
+                                </div>
+                            </div>
+                            <!-- Time Slot 4 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:00 PM - 12:00 AM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowNormalSlot4Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Late Night Admin</h3>
+                                    <p id="tomorrowNormalSlot4Desc" class="text-[var(--text-secondary)] mt-1">Winding down with some chill development.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Container for the Work Day Schedule -->
+                        <div id="workDayScheduleTomorrow" class="space-y-4">
+                            <!-- Work Block 1 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>9:30 AM - 12:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowWorkSlot1Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Morning Warmup</h3>
+                                    <p id="tomorrowWorkSlot1Desc" class="text-[var(--text-secondary)] mt-1">Clearing admin tasks, then jumping into chill development.</p>
+                                </div>
+                            </div>
+                            <!-- Work Block 2 -->
+                            <div class="bg-[var(--tomorrow-bg)] backdrop-blur-sm rounded-xl p-5 border border-[var(--tomorrow-border)] flex items-center gap-4">
+                                <div class="bg-[var(--tomorrow-accent-bg)] text-[var(--tomorrow-text)] font-bold rounded-lg px-4 py-3 text-center w-48 flex items-center justify-center">
+                                    <p>12:30 PM - 3:30 PM</p>
+                                </div>
+                                <div>
+                                    <h3 id="tomorrowWorkSlot2Title" class="text-xl font-semibold text-[var(--tomorrow-text)]">Focused Development + Prototype Speedrun</h3>
+                                    <p id="tomorrowWorkSlot2Desc" class="text-[var(--text-secondary)] mt-1">Getting stuff done and making things happen ✨👏</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Footer -->
+                    <footer class="text-center mt-12">
+                        <p class="text-[var(--text-muted)]">All times are in EST</p>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customization Controls -->
+        <div class="mt-8">
+            <!-- Theme Settings -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Theme Settings</h3>
+                <div id="theme-buttons" class="flex flex-wrap justify-center gap-4">
+                    <button data-theme="twilight" class="theme-btn active bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Twilight</button>
+                    <button data-theme="sunrise" class="theme-btn bg-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Sunrise</button>
+                    <button data-theme="forest" class="theme-btn bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Forest</button>
+                    <button data-theme="oceanic" class="theme-btn bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Oceanic</button>
+                    <button data-theme="cyberpunk" class="theme-btn bg-pink-500 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Cyberpunk</button>
+                    <button data-theme="pastel" class="theme-btn bg-indigo-300 text-indigo-900 font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Pastel</button>
+                    <button data-theme="arctic" class="theme-btn bg-cyan-400 text-slate-900 font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Arctic</button>
+                </div>
+            </div>
+
+            <!-- Panel Scope Settings -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Panel Scope</h3>
+                <div class="flex justify-center items-center gap-4">
+                    <span class="text-sm font-medium text-[var(--text-secondary)]">Today Only</span>
+                    <label for="panelScopeToggle" class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" value="" id="panelScopeToggle" class="sr-only peer" checked>
+                      <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
+                    </label>
+                    <span class="text-sm font-medium text-[var(--text-secondary)]">Full Schedule</span>
+                </div>
+            </div>
+
+            <!-- Schedule Settings -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Schedule Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Today's Settings -->
+                    <div class="text-center">
+                        <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Today's Schedule Type</label>
+                        <div class="flex justify-center gap-4">
+                            <button id="setNormalDayToday" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
+                            <button id="setWorkDayToday" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                        </div>
+                    </div>
+                    <!-- Tomorrow's Settings -->
+                    <div class="text-center">
+                        <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Tomorrow's Schedule Type</label>
+                        <div class="flex justify-center gap-4">
+                            <button id="setNormalDayTomorrow" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
+                            <button id="setWorkDayTomorrow" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Editor -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Content Editor</h3>
+                <!-- Editor Tabs -->
+                <div class="flex justify-center border-b border-[var(--border-primary)] mb-6">
+                    <button id="editTodayTab" class="editor-tab active py-2 px-6 font-semibold rounded-t-lg">Edit Today</button>
+                    <button id="editTomorrowTab" class="editor-tab py-2 px-6 font-semibold rounded-t-lg">Edit Tomorrow</button>
+                </div>
+
+                <!-- Today's Editor Panel -->
+                <div id="todayEditor">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Main Title</label>
+                            <input type="text" id="todayTitleInput" class="editor-input w-full rounded-md p-2">
+                        </div>
+                        <hr class="border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-[var(--today-accent)]">Normal Day Schedule</h4>
+                        <!-- Normal Day Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input type="text" id="todayNormalSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot3TitleInput" placeholder="Slot 3 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot3DescInput" placeholder="Slot 3 Description" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot4TitleInput" placeholder="Slot 4 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayNormalSlot4DescInput" placeholder="Slot 4 Description" class="editor-input rounded p-2">
+                        </div>
+                        <hr class="border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-[var(--today-accent)]">Work Day Schedule</h4>
+                        <!-- Work Day Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <input type="text" id="todayWorkSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayWorkSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
+                            <input type="text" id="todayWorkSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
+                            <input type="text" id="todayWorkSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tomorrow's Editor Panel (hidden by default) -->
+                <div id="tomorrowEditor" class="hidden">
+                     <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Main Title</label>
+                            <input type="text" id="tomorrowTitleInput" class="editor-input w-full rounded-md p-2">
+                        </div>
+                        <hr class="border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-[var(--tomorrow-text)]">Normal Day Schedule</h4>
+                        <!-- Normal Day Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input type="text" id="tomorrowNormalSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot3TitleInput" placeholder="Slot 3 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot3DescInput" placeholder="Slot 3 Description" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot4TitleInput" placeholder="Slot 4 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowNormalSlot4DescInput" placeholder="Slot 4 Description" class="editor-input rounded p-2">
+                        </div>
+                        <hr class="border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-[var(--tomorrow-text)]">Work Day Schedule</h4>
+                        <!-- Work Day Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <input type="text" id="tomorrowWorkSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowWorkSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowWorkSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
+                            <input type="text" id="tomorrowWorkSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout Settings -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Layout Customization</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <!-- Outer Padding -->
+                    <div class="md:col-span-2">
+                        <h4 class="font-semibold text-center mb-4 text-[var(--text-secondary)]">Outer Padding</h4>
+                    </div>
+                    <div>
+                        <label for="outerPaddingTop" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Top</label>
+                        <div class="flex items-center gap-4">
+                            <input id="outerPaddingTop" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="outerPaddingTopValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="outerPaddingBottom" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Bottom</label>
+                         <div class="flex items-center gap-4">
+                            <input id="outerPaddingBottom" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="outerPaddingBottomValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="outerPaddingLeft" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Left</label>
+                         <div class="flex items-center gap-4">
+                            <input id="outerPaddingLeft" type="range" min="0" max="128" value="0" class="w-full">
+                            <span id="outerPaddingLeftValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">0px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="outerPaddingRight" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Right</label>
+                         <div class="flex items-center gap-4">
+                            <input id="outerPaddingRight" type="range" min="0" max="128" value="0" class="w-full">
+                            <span id="outerPaddingRightValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">0px</span>
+                        </div>
+                    </div>
+                    <!-- Inner Padding -->
+                     <div class="md:col-span-2 pt-4 mt-4 border-t border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-center mb-4 text-[var(--text-secondary)]">Inner Padding</h4>
+                    </div>
+                     <div>
+                        <label for="innerPaddingTop" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Top</label>
+                        <div class="flex items-center gap-4">
+                            <input id="innerPaddingTop" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="innerPaddingTopValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="innerPaddingBottom" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Bottom</label>
+                         <div class="flex items-center gap-4">
+                            <input id="innerPaddingBottom" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="innerPaddingBottomValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="innerPaddingLeft" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Left</label>
+                         <div class="flex items-center gap-4">
+                            <input id="innerPaddingLeft" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="innerPaddingLeftValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="innerPaddingRight" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Right</label>
+                         <div class="flex items-center gap-4">
+                            <input id="innerPaddingRight" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="innerPaddingRightValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discord Message Generator -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Discord Message Generator</h3>
+                <div class="mb-4 relative">
+                    <label for="discordTitleInput" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Announcement Title</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="discordTitleInput" class="editor-input w-full rounded-md p-2" value="Doubling our Usual Hours! ✨👏">
+                        <button id="emojiBtn" class="schedule-btn active text-white font-bold py-2 px-4 rounded-lg">😀</button>
+                    </div>
+                    <div id="emojiPicker" class="grid"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Timestamp Format</label>
+                        <select id="timestampFormat" class="editor-input w-full rounded-md p-2">
+                            <option value="t">Short Time (e.g., 10:30 AM)</option>
+                            <option value="T">Long Time (e.g., 10:30:00 AM)</option>
+                            <option value="d">Short Date (e.g., 08/23/2025)</option>
+                            <option value="D">Long Date (e.g., August 23, 2025)</option>
+                            <option value="f">Short Date/Time (e.g., August 23, 2025 10:30 AM)</option>
+                            <option value="F">Long Date/Time (e.g., Saturday, August 23, 2025 10:30 AM)</option>
+                            <option value="R">Relative Time (e.g., in 2 hours)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end justify-center">
+                         <div class="flex items-center gap-4">
+                            <span class="text-sm font-medium text-[var(--text-secondary)]">Default</span>
+                            <label for="useTimestampsToggle" class="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" value="" id="useTimestampsToggle" class="sr-only peer">
+                              <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
+                            </label>
+                            <span class="text-sm font-medium text-[var(--text-secondary)]">Timestamps</span>
+                        </div>
+                    </div>
+                </div>
+                <textarea id="discordMessageOutput" readonly class="editor-input w-full h-64 rounded-md p-2 resize-none"></textarea>
+                <button id="copyMessageBtn" class="schedule-btn active mt-4 w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Copy Message</button>
+            </div>
+
+             <!-- Export Schedule -->
+            <div class="p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Export Schedule</h3>
+                <div class="space-y-3">
+                    <button id="screenshotModeBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Open for Screenshot</button>
+                    <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Download as PNG (Beta)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Date Setup ---
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateOptions = { month: 'short', day: 'numeric' };
+            
+            const todayString = today.toLocaleDateString('en-US', dateOptions);
+            const tomorrowString = tomorrow.toLocaleDateString('en-US', dateOptions);
+
+            const todayTitleEl = document.getElementById('todayTitle');
+            const tomorrowTitleEl = document.getElementById('tomorrowTitle');
+            
+            const todayTitleText = `Today's Stream &bull; ${todayString}`;
+            const tomorrowTitleText = `Tomorrow's Stream &bull; ${tomorrowString}`;
+
+            todayTitleEl.innerHTML = todayTitleText;
+            tomorrowTitleEl.innerHTML = tomorrowTitleText;
+
+
+            // --- Theme Controls ---
+            const themeButtonsContainer = document.getElementById('theme-buttons');
+            themeButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const theme = e.target.dataset.theme;
+                    document.body.className = `bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300 theme-${theme}`;
+                    
+                    // Update active button style
+                    themeButtonsContainer.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                }
+            });
+
+            // --- Panel Scope Toggle ---
+            const panelScopeToggle = document.getElementById('panelScopeToggle');
+            const masterPanel = document.getElementById('masterPanel');
+            const bottomContent = document.getElementById('bottomContent');
+
+            panelScopeToggle.addEventListener('change', () => {
+                if (panelScopeToggle.checked) {
+                    // Full Scope: Append bottom content to master panel
+                    masterPanel.appendChild(bottomContent);
+                } else {
+                    // Today Only: Append bottom content after master panel's parent
+                    masterPanel.parentNode.insertBefore(bottomContent, masterPanel.nextSibling);
+                }
+            });
+
+            // --- Schedule Type Controls ---
+            const scheduleControls = {
+                today: {
+                    normalBtn: document.getElementById('setNormalDayToday'),
+                    workBtn: document.getElementById('setWorkDayToday'),
+                    normalSchedule: document.getElementById('normalDayScheduleToday'),
+                    workSchedule: document.getElementById('workDayScheduleToday'),
+                },
+                tomorrow: {
+                    normalBtn: document.getElementById('setNormalDayTomorrow'),
+                    workBtn: document.getElementById('setWorkDayTomorrow'),
+                    normalSchedule: document.getElementById('normalDayScheduleTomorrow'),
+                    workSchedule: document.getElementById('workDayScheduleTomorrow'),
+                }
+            };
+
+            function setupScheduleToggle(day) {
+                const controls = scheduleControls[day];
+                controls.normalBtn.addEventListener('click', () => {
+                    controls.normalSchedule.classList.remove('hidden');
+                    controls.workSchedule.classList.add('hidden');
+                    controls.normalBtn.classList.add('active');
+                    controls.workBtn.classList.remove('active');
+                    generateDiscordMessage();
+                });
+                controls.workBtn.addEventListener('click', () => {
+                    controls.normalSchedule.classList.add('hidden');
+                    controls.workSchedule.classList.remove('hidden');
+                    controls.workBtn.classList.add('active');
+                    controls.normalBtn.classList.remove('active');
+                    generateDiscordMessage();
+                });
+            }
+            setupScheduleToggle('today');
+            setupScheduleToggle('tomorrow');
+
+            // --- Content Editor Tabs ---
+            const editTodayTab = document.getElementById('editTodayTab');
+            const editTomorrowTab = document.getElementById('editTomorrowTab');
+            const todayEditor = document.getElementById('todayEditor');
+            const tomorrowEditor = document.getElementById('tomorrowEditor');
+
+            editTodayTab.addEventListener('click', () => {
+                todayEditor.classList.remove('hidden');
+                tomorrowEditor.classList.add('hidden');
+                editTodayTab.classList.add('active');
+                editTomorrowTab.classList.remove('active');
+            });
+
+            editTomorrowTab.addEventListener('click', () => {
+                todayEditor.classList.add('hidden');
+                tomorrowEditor.classList.remove('hidden');
+                editTodayTab.classList.remove('active');
+                editTomorrowTab.classList.add('active');
+            });
+
+            // --- Content Binding ---
+            const bindings = [
+                // Today
+                { inputId: 'todayTitleInput', displayId: 'todayTitle' },
+                { inputId: 'todayNormalSlot1TitleInput', displayId: 'todayNormalSlot1Title' },
+                { inputId: 'todayNormalSlot1DescInput', displayId: 'todayNormalSlot1Desc' },
+                { inputId: 'todayNormalSlot2TitleInput', displayId: 'todayNormalSlot2Title' },
+                { inputId: 'todayNormalSlot2DescInput', displayId: 'todayNormalSlot2Desc' },
+                { inputId: 'todayNormalSlot3TitleInput', displayId: 'todayNormalSlot3Title' },
+                { inputId: 'todayNormalSlot3DescInput', displayId: 'todayNormalSlot3Desc' },
+                { inputId: 'todayNormalSlot4TitleInput', displayId: 'todayNormalSlot4Title' },
+                { inputId: 'todayNormalSlot4DescInput', displayId: 'todayNormalSlot4Desc' },
+                { inputId: 'todayWorkSlot1TitleInput', displayId: 'todayWorkSlot1Title' },
+                { inputId: 'todayWorkSlot1DescInput', displayId: 'todayWorkSlot1Desc' },
+                { inputId: 'todayWorkSlot2TitleInput', displayId: 'todayWorkSlot2Title' },
+                { inputId: 'todayWorkSlot2DescInput', displayId: 'todayWorkSlot2Desc' },
+                // Tomorrow
+                { inputId: 'tomorrowTitleInput', displayId: 'tomorrowTitle' },
+                { inputId: 'tomorrowNormalSlot1TitleInput', displayId: 'tomorrowNormalSlot1Title' },
+                { inputId: 'tomorrowNormalSlot1DescInput', displayId: 'tomorrowNormalSlot1Desc' },
+                { inputId: 'tomorrowNormalSlot2TitleInput', displayId: 'tomorrowNormalSlot2Title' },
+                { inputId: 'tomorrowNormalSlot2DescInput', displayId: 'tomorrowNormalSlot2Desc' },
+                { inputId: 'tomorrowNormalSlot3TitleInput', displayId: 'tomorrowNormalSlot3Title' },
+                { inputId: 'tomorrowNormalSlot3DescInput', displayId: 'tomorrowNormalSlot3Desc' },
+                { inputId: 'tomorrowNormalSlot4TitleInput', displayId: 'tomorrowNormalSlot4Title' },
+                { inputId: 'tomorrowNormalSlot4DescInput', displayId: 'tomorrowNormalSlot4Desc' },
+                { inputId: 'tomorrowWorkSlot1TitleInput', displayId: 'tomorrowWorkSlot1Title' },
+                { inputId: 'tomorrowWorkSlot1DescInput', displayId: 'tomorrowWorkSlot1Desc' },
+                { inputId: 'tomorrowWorkSlot2TitleInput', displayId: 'tomorrowWorkSlot2Title' },
+                { inputId: 'tomorrowWorkSlot2DescInput', displayId: 'tomorrowWorkSlot2Desc' },
+            ];
+
+            function setupBinding({ inputId, displayId }) {
+                const inputEl = document.getElementById(inputId);
+                const displayEl = document.getElementById(displayId);
+                // Set initial value for the input from the display element
+                inputEl.value = displayEl.innerHTML;
+                // Add event listener to update display on input
+                inputEl.addEventListener('input', () => {
+                    displayEl.innerHTML = inputEl.value;
+                });
+            }
+
+            bindings.forEach(setupBinding);
+
+            // --- Layout Padding Controls ---
+            const outerPaddingContainer = document.getElementById('outerPaddingContainer');
+            
+            const outerSliders = {
+                'paddingTop': { input: document.getElementById('outerPaddingTop'), valueSpan: document.getElementById('outerPaddingTopValue'), styleProperty: 'paddingTop' },
+                'paddingBottom': { input: document.getElementById('outerPaddingBottom'), valueSpan: document.getElementById('outerPaddingBottomValue'), styleProperty: 'paddingBottom' },
+                'paddingLeft': { input: document.getElementById('outerPaddingLeft'), valueSpan: document.getElementById('outerPaddingLeftValue'), styleProperty: 'paddingLeft' },
+                'paddingRight': { input: document.getElementById('outerPaddingRight'), valueSpan: document.getElementById('outerPaddingRightValue'), styleProperty: 'paddingRight' }
+            };
+             const innerSliders = {
+                'paddingTop': { input: document.getElementById('innerPaddingTop'), valueSpan: document.getElementById('innerPaddingTopValue'), styleProperty: 'paddingTop' },
+                'paddingBottom': { input: document.getElementById('innerPaddingBottom'), valueSpan: document.getElementById('innerPaddingBottomValue'), styleProperty: 'paddingBottom' },
+                'paddingLeft': { input: document.getElementById('innerPaddingLeft'), valueSpan: document.getElementById('innerPaddingLeftValue'), styleProperty: 'paddingLeft' },
+                'paddingRight': { input: document.getElementById('innerPaddingRight'), valueSpan: document.getElementById('innerPaddingRightValue'), styleProperty: 'paddingRight' }
+            };
+
+            function updatePadding(key, sliders, targetElement) {
+                const { input, valueSpan, styleProperty } = sliders[key];
+                const value = input.value;
+                targetElement.style[styleProperty] = `${value}px`;
+                valueSpan.textContent = `${value}px`;
+            }
+
+            for (const key in outerSliders) {
+                updatePadding(key, outerSliders, outerPaddingContainer);
+                outerSliders[key].input.addEventListener('input', () => updatePadding(key, outerSliders, outerPaddingContainer));
+            }
+             for (const key in innerSliders) {
+                updatePadding(key, innerSliders, masterPanel);
+                innerSliders[key].input.addEventListener('input', () => updatePadding(key, innerSliders, masterPanel));
+            }
+
+            // --- Discord Message Generator ---
+            const discordMessageOutput = document.getElementById('discordMessageOutput');
+            const copyMessageBtn = document.getElementById('copyMessageBtn');
+            const useTimestampsToggle = document.getElementById('useTimestampsToggle');
+            const timestampFormatSelect = document.getElementById('timestampFormat');
+            const discordTitleInput = document.getElementById('discordTitleInput');
+
+            function getTimestamp(date, hours, minutes) {
+                const d = new Date(date);
+                d.setHours(hours, minutes, 0, 0);
+                return Math.floor(d.getTime() / 1000);
+            }
+
+            function generateDiscordMessage() {
+                const useTimestamps = useTimestampsToggle.checked;
+                const format = timestampFormatSelect.value;
+                const isTodayNormal = !scheduleControls.today.normalSchedule.classList.contains('hidden');
+                const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
+                const announcementTitle = discordTitleInput.value;
+
+                const todayTimes = isTodayNormal 
+                    ? useTimestamps
+                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 13, 0)}:${format}> to <t:${getTimestamp(today, 16, 0)}:${format}>\n- <t:${getTimestamp(today, 17, 0)}:${format}> to <t:${getTimestamp(today, 20, 0)}:${format}>\n- <t:${getTimestamp(today, 21, 0)}:${format}> to <t:${getTimestamp(tomorrow, 0, 0)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
+                    : useTimestamps
+                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 12, 30)}:${format}> to <t:${getTimestamp(today, 15, 30)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
+
+                const tomorrowTimes = isTomorrowNormal
+                    ? useTimestamps
+                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${new Date(tomorrow).setDate(tomorrow.getDate()+1) && getTimestamp(tomorrow, 0, 0)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
+                    : useTimestamps
+                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
+                
+                const footerText = useTimestamps
+                    ? `\`\`Times auto-adjust to your timezone!\`\``
+                    : `\`\`All EST!\`\``;
+
+                const message = `@Twitch Enjoyers : ${announcementTitle}\n\nI will be streaming on Twitch \`\`Today\`\` from:\n\n${todayTimes}\n\n\`\`Tomorrow\`\` I'll be streaming from:\n\n${tomorrowTimes}\n\n${footerText}\n\nhttps://www.twitch.tv/audaciousgabe`;
+
+                discordMessageOutput.value = message;
+            }
+
+            useTimestampsToggle.addEventListener('change', generateDiscordMessage);
+            timestampFormatSelect.addEventListener('change', generateDiscordMessage);
+            discordTitleInput.addEventListener('input', generateDiscordMessage);
+
+            copyMessageBtn.addEventListener('click', () => {
+                discordMessageOutput.select();
+                document.execCommand('copy');
+                
+                const originalText = copyMessageBtn.textContent;
+                copyMessageBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyMessageBtn.textContent = originalText;
+                }, 2000);
+            });
+
+            // --- Emoji Picker ---
+            const emojiBtn = document.getElementById('emojiBtn');
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojis = ['😀', '😂', '😍', '🤔', '😎', '😭', '🥳', '🤯', '✨', '👏', '🔥', '💯', '✅', '🚀', '👀', '👋', '🎉', '🌟'];
+            
+            emojis.forEach(emoji => {
+                const button = document.createElement('button');
+                button.textContent = emoji;
+                button.className = 'emoji-btn';
+                button.onclick = () => {
+                    discordTitleInput.value += emoji;
+                    emojiPicker.style.display = 'none';
+                    generateDiscordMessage();
+                };
+                emojiPicker.appendChild(button);
+            });
+
+            emojiBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                emojiPicker.style.display = emojiPicker.style.display === 'grid' ? 'none' : 'grid';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                    emojiPicker.style.display = 'none';
+                }
+            });
+
+            // --- Screenshot Mode ---
+            const screenshotModeBtn = document.getElementById('screenshotModeBtn');
+            screenshotModeBtn.addEventListener('click', () => {
+                // Gather current state
+                const currentTheme = document.body.className;
+                const isPanelScopeFull = panelScopeToggle.checked;
+                const isTodayNormal = !scheduleControls.today.normalSchedule.classList.contains('hidden');
+                const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
+                
+                // Get all the current content
+                const scheduleHTML = document.getElementById('outerPaddingContainer').innerHTML;
+                
+                // Get the current CSS variable values
+                const computedStyles = getComputedStyle(document.body);
+                const cssVars = [
+                    '--bg-primary', '--bg-secondary', '--border-primary',
+                    '--text-primary', '--text-secondary', '--text-muted',
+                    '--header-gradient-start', '--header-gradient-end', '--header-glow',
+                    '--today-accent', '--today-accent-bg', '--today-header', '--today-header-border',
+                    '--tomorrow-bg', '--tomorrow-border', '--tomorrow-accent-bg',
+                    '--tomorrow-text', '--tomorrow-header', '--tomorrow-header-border'
+                ];
+                
+                let cssVarStyles = ':root {';
+                cssVars.forEach(varName => {
+                    const value = computedStyles.getPropertyValue(varName).trim();
+                    if (value) {
+                        cssVarStyles += `${varName}: ${value};`;
+                    }
+                });
+                cssVarStyles += '}';
+                
+                // Create the HTML for the new window
+                const screenshotHTML = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Stream Schedule - Screenshot Mode</title>
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+                        <style>
+                            body {
+                                font-family: 'Inter', sans-serif;
+                                background-color: var(--bg-primary);
+                                color: var(--text-primary);
+                                margin: 0;
+                                padding: 20px;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                min-height: 100vh;
+                            }
+                            
+                            ${cssVarStyles}
+                            
+                            .gradient-text { 
+                                color: var(--header-gradient-start); 
+                                text-shadow: 0 2px 20px var(--header-glow); 
+                            }
+                            
+                            .glowing-panel {
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+                            }
+                            
+                            /* Hide elements we don't want in screenshots */
+                            .hidden { display: none !important; }
+                        </style>
+                    </head>
+                    <body>
+                        <div style="max-width: 1024px; width: 100%;">
+                            ${scheduleHTML}
+                        </div>
+                        <script>
+                            // Apply visibility states
+                            const isTodayNormal = ${isTodayNormal};
+                            const isTomorrowNormal = ${isTomorrowNormal};
+                            const isPanelScopeFull = ${isPanelScopeFull};
+                            
+                            // Show/hide appropriate schedules
+                            if (document.getElementById('normalDayScheduleToday')) {
+                                document.getElementById('normalDayScheduleToday').classList.toggle('hidden', !isTodayNormal);
+                            }
+                            if (document.getElementById('workDayScheduleToday')) {
+                                document.getElementById('workDayScheduleToday').classList.toggle('hidden', isTodayNormal);
+                            }
+                            if (document.getElementById('normalDayScheduleTomorrow')) {
+                                document.getElementById('normalDayScheduleTomorrow').classList.toggle('hidden', !isTomorrowNormal);
+                            }
+                            if (document.getElementById('workDayScheduleTomorrow')) {
+                                document.getElementById('workDayScheduleTomorrow').classList.toggle('hidden', isTomorrowNormal);
+                            }
+                            
+                            // Handle panel scope
+                            if (!isPanelScopeFull && document.getElementById('bottomContent')) {
+                                document.getElementById('bottomContent').style.display = 'none';
+                            }
+                            
+                            // Add helper text
+                            const helperDiv = document.createElement('div');
+                            helperDiv.style.position = 'fixed';
+                            helperDiv.style.top = '10px';
+                            helperDiv.style.right = '10px';
+                            helperDiv.style.background = 'rgba(0, 0, 0, 0.8)';
+                            helperDiv.style.color = 'white';
+                            helperDiv.style.padding = '10px 15px';
+                            helperDiv.style.borderRadius = '8px';
+                            helperDiv.style.fontSize = '14px';
+                            helperDiv.style.zIndex = '9999';
+                            helperDiv.innerHTML = 'Screenshot Mode - Use your screenshot tool (Win+Shift+S)';
+                            document.body.appendChild(helperDiv);
+                            
+                            // Remove helper after 5 seconds
+                            setTimeout(() => {
+                                helperDiv.style.transition = 'opacity 0.5s';
+                                helperDiv.style.opacity = '0';
+                                setTimeout(() => helperDiv.remove(), 500);
+                            }, 5000);
+                        <\/script>
+                    </body>
+                    </html>
+                `;
+                
+                // Open new window
+                const screenshotWindow = window.open('', 'ScreenshotMode', 'width=1200,height=800');
+                screenshotWindow.document.write(screenshotHTML);
+                screenshotWindow.document.close();
+            });
+            
+            // --- Export as PNG ---
+            const exportBtn = document.getElementById('exportBtn');
+            exportBtn.addEventListener('click', async () => {
+                const elementToCapture = document.getElementById('outerPaddingContainer');
+                
+                // Store original state
+                const originalText = exportBtn.textContent;
+                exportBtn.textContent = 'Generating...';
+                exportBtn.disabled = true;
+                
+                try {
+                    // Get computed styles for the current theme
+                    const computedStyles = getComputedStyle(document.body);
+                    const bgColor = computedStyles.getPropertyValue('--bg-primary').trim();
+                    
+                    // Clone the element to avoid modifying the original
+                    const clonedElement = elementToCapture.cloneNode(true);
+                    
+                    // Create a temporary container
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    tempContainer.style.top = '0';
+                    tempContainer.style.width = elementToCapture.offsetWidth + 'px';
+                    
+                    // Apply inline styles to preserve theme colors
+                    const applyInlineStyles = (element, original) => {
+                        const styles = window.getComputedStyle(original);
+                        const importantProps = [
+                            'background-color', 'color', 'border-color', 'border-width', 
+                            'border-style', 'border-radius', 'padding', 'margin', 
+                            'font-size', 'font-weight', 'font-family', 'text-align',
+                            'display', 'flex-direction', 'justify-content', 'align-items',
+                            'gap', 'width', 'height', 'box-shadow', 'opacity'
+                        ];
+                        
+                        importantProps.forEach(prop => {
+                            if (styles[prop] && styles[prop] !== 'none' && styles[prop] !== '0px') {
+                                element.style[prop] = styles[prop];
+                            }
+                        });
+                        
+                        // Handle CSS variables
+                        if (element.style.backgroundColor && element.style.backgroundColor.includes('var(')) {
+                            element.style.backgroundColor = styles.backgroundColor;
+                        }
+                        if (element.style.color && element.style.color.includes('var(')) {
+                            element.style.color = styles.color;
+                        }
+                        if (element.style.borderColor && element.style.borderColor.includes('var(')) {
+                            element.style.borderColor = styles.borderColor;
+                        }
+                    };
+                    
+                    // Apply inline styles recursively
+                    const processElement = (cloned, original) => {
+                        applyInlineStyles(cloned, original);
+                        const clonedChildren = cloned.children;
+                        const originalChildren = original.children;
+                        for (let i = 0; i < clonedChildren.length; i++) {
+                            if (originalChildren[i]) {
+                                processElement(clonedChildren[i], originalChildren[i]);
+                            }
+                        }
+                    };
+                    
+                    processElement(clonedElement, elementToCapture);
+                    
+                    // Add the cloned element to the page temporarily
+                    tempContainer.appendChild(clonedElement);
+                    document.body.appendChild(tempContainer);
+                    
+                    // Take screenshot with html2canvas
+                    const canvas = await html2canvas(clonedElement, {
+                        backgroundColor: bgColor,
+                        scale: 2, // Higher quality
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true,
+                        windowWidth: elementToCapture.scrollWidth,
+                        windowHeight: elementToCapture.scrollHeight,
+                        onclone: (clonedDoc) => {
+                            // Additional processing if needed
+                            const clonedBody = clonedDoc.body;
+                            clonedBody.style.margin = '0';
+                            clonedBody.style.padding = '0';
+                        }
+                    });
+                    
+                    // Remove temporary container
+                    document.body.removeChild(tempContainer);
+                    
+                    // Download the image
+                    const link = document.createElement('a');
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                    link.download = `stream_schedule_${timestamp}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // Restore button state
+                    exportBtn.textContent = 'Downloaded!';
+                    setTimeout(() => {
+                        exportBtn.textContent = originalText;
+                        exportBtn.disabled = false;
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('Error generating screenshot:', error);
+                    exportBtn.textContent = 'Error - Try Again';
+                    exportBtn.disabled = false;
+                    setTimeout(() => {
+                        exportBtn.textContent = originalText;
+                    }, 3000);
+                }
+            });
+
+            // Initial generation
+            generateDiscordMessage();
+        });
+    </script>
+
+</body>
+</html>
