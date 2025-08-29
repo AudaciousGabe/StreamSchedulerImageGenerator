@@ -256,12 +256,12 @@
 
         /* Glowing Panel Style */
         .glowing-panel {
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid var(--panel-border-color, rgba(255, 255, 255, 0.4));
             box-shadow: 0 0 var(--panel-glow-size, 40px) var(--panel-glow-color, rgba(255, 255, 255, 0.2)),
-                        0 0 calc(var(--panel-glow-size, 40px) * 1.5) var(--panel-glow-color, rgba(255, 255, 255, 0.15)),
-                        0 0 calc(var(--panel-glow-size, 40px) * 2) var(--panel-glow-color, rgba(255, 255, 255, 0.1)),
-                        inset 0 0 var(--panel-glow-size, 40px) var(--panel-glow-color, rgba(255, 255, 255, 0.08));
-            transition: box-shadow 0.3s ease;
+                        0 0 calc(var(--panel-glow-size, 40px) * 1.5) var(--panel-glow-color-secondary, rgba(255, 255, 255, 0.15)),
+                        0 0 calc(var(--panel-glow-size, 40px) * 2) var(--panel-glow-color-tertiary, rgba(255, 255, 255, 0.1)),
+                        inset 0 0 var(--panel-glow-size, 40px) var(--panel-glow-color-inset, rgba(255, 255, 255, 0.08));
+            transition: box-shadow 0.3s ease, border 0.3s ease;
             position: relative;
         }
 
@@ -514,37 +514,42 @@
                 </div>
             </div>
 
-            <!-- Panel Scope Settings -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Panel Scope</h3>
-                <div class="flex justify-center items-center gap-4">
-                    <span class="text-sm font-medium text-[var(--text-secondary)]">Today Only</span>
-                    <label for="panelScopeToggle" class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" value="" id="panelScopeToggle" class="sr-only peer" checked>
-                      <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
-                    </label>
-                    <span class="text-sm font-medium text-[var(--text-secondary)]">Full Schedule</span>
-                </div>
-            </div>
-
             <!-- Schedule Settings -->
             <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
                 <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Schedule Settings</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Today's Settings -->
-                    <div class="text-center">
-                        <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Today's Schedule Type</label>
-                        <div class="flex justify-center gap-4">
-                            <button id="setNormalDayToday" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
-                            <button id="setWorkDayToday" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Today's Settings -->
+                        <div class="text-center">
+                            <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Today's Schedule Type</label>
+                            <div class="flex justify-center gap-4">
+                                <button id="setNormalDayToday" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
+                                <button id="setWorkDayToday" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                            </div>
+                        </div>
+                        <!-- Tomorrow's Settings -->
+                        <div class="text-center">
+                            <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Tomorrow's Schedule Type</label>
+                            <div class="flex justify-center gap-4">
+                                <button id="setNormalDayTomorrow" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
+                                <button id="setWorkDayTomorrow" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                            </div>
                         </div>
                     </div>
-                    <!-- Tomorrow's Settings -->
-                    <div class="text-center">
-                        <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Tomorrow's Schedule Type</label>
-                        <div class="flex justify-center gap-4">
-                            <button id="setNormalDayTomorrow" class="schedule-btn text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Normal</button>
-                            <button id="setWorkDayTomorrow" class="schedule-btn active text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Work</button>
+                    
+                    <!-- Panel Scope Setting (moved from separate section) -->
+                    <div class="pt-4 border-t border-[var(--border-primary)]">
+                        <div class="text-center">
+                            <label class="block mb-3 text-sm font-medium text-[var(--text-secondary)]">Export Scope</label>
+                            <div class="flex justify-center items-center gap-4">
+                                <span class="text-sm font-medium text-[var(--text-secondary)]">Today Only</span>
+                                <label for="panelScopeToggle" class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" value="" id="panelScopeToggle" class="sr-only peer" checked>
+                                  <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
+                                </label>
+                                <span class="text-sm font-medium text-[var(--text-secondary)]">Full Schedule</span>
+                            </div>
+                            <p class="text-xs text-[var(--text-muted)] mt-2">Choose what to include when exporting the image</p>
                         </div>
                     </div>
                 </div>
@@ -1066,31 +1071,71 @@
                 const panelGlow = panelGlowSlider.value;
                 const intensity = glowIntensitySlider.value / 100;
                 
-                // Update CSS variables
+                // Update CSS variables for sizes
                 document.documentElement.style.setProperty('--title-glow-size', titleGlow + 'px');
                 document.documentElement.style.setProperty('--link-glow-size', linkGlow + 'px');
                 document.documentElement.style.setProperty('--panel-glow-size', panelGlow + 'px');
                 
-                // Calculate glow color with intensity
+                // Get theme colors
                 const computedStyles = getComputedStyle(document.body);
                 const headerGlow = computedStyles.getPropertyValue('--header-glow').trim();
-                // Use theme's header glow color for panel, or fallback to white
-                const themeGlowColor = computedStyles.getPropertyValue('--header-gradient-start').trim();
+                const headerGradientStart = computedStyles.getPropertyValue('--header-gradient-start').trim();
                 
-                // Create a more vibrant glow using the theme color
-                if (themeGlowColor) {
-                    // Parse the color and create rgba version with intensity
-                    const panelGlowColor = `${themeGlowColor}`;
-                    document.documentElement.style.setProperty('--panel-glow-color', headerGlow || `rgba(255, 255, 255, ${0.25 * intensity})`);
+                // Parse rgba color and apply intensity
+                const applyIntensityToRgba = (rgbaString, multiplier = 1) => {
+                    const match = rgbaString.match(/rgba?\(([^)]+)\)/);
+                    if (match) {
+                        const parts = match[1].split(',').map(s => s.trim());
+                        if (parts.length >= 3) {
+                            const alpha = parts[3] ? parseFloat(parts[3]) : 1;
+                            return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha * intensity * multiplier})`;
+                        }
+                    }
+                    // Fallback for non-rgba colors
+                    return `rgba(255, 255, 255, ${0.2 * intensity * multiplier})`;
+                };
+                
+                // Update panel glow colors with intensity applied
+                if (headerGlow) {
+                    // Use theme's glow color with intensity
+                    document.documentElement.style.setProperty('--panel-glow-color', applyIntensityToRgba(headerGlow, 1));
+                    document.documentElement.style.setProperty('--panel-glow-color-secondary', applyIntensityToRgba(headerGlow, 0.75));
+                    document.documentElement.style.setProperty('--panel-glow-color-tertiary', applyIntensityToRgba(headerGlow, 0.5));
+                    document.documentElement.style.setProperty('--panel-glow-color-inset', applyIntensityToRgba(headerGlow, 0.4));
                 } else {
-                    const panelGlowColor = `rgba(255, 255, 255, ${0.25 * intensity})`;
-                    document.documentElement.style.setProperty('--panel-glow-color', panelGlowColor);
+                    // Fallback to white glow
+                    document.documentElement.style.setProperty('--panel-glow-color', `rgba(255, 255, 255, ${0.2 * intensity})`);
+                    document.documentElement.style.setProperty('--panel-glow-color-secondary', `rgba(255, 255, 255, ${0.15 * intensity})`);
+                    document.documentElement.style.setProperty('--panel-glow-color-tertiary', `rgba(255, 255, 255, ${0.1 * intensity})`);
+                    document.documentElement.style.setProperty('--panel-glow-color-inset', `rgba(255, 255, 255, ${0.08 * intensity})`);
                 }
                 
-                // Update link glow inline style
+                // Update panel border with intensity
+                document.documentElement.style.setProperty('--panel-border-color', `rgba(255, 255, 255, ${0.4 * intensity})`);
+                
+                // Update title glow with intensity
+                const titleGlowColor = headerGlow ? applyIntensityToRgba(headerGlow, 1) : `rgba(255, 255, 255, ${0.3 * intensity})`;
+                const gradientText = document.querySelector('.gradient-text');
+                if (gradientText) {
+                    if (intensity > 0) {
+                        gradientText.style.textShadow = `0 0 ${titleGlow}px ${titleGlowColor}, 0 0 ${titleGlow}px ${headerGradientStart || '#c084fc'}`;
+                    } else {
+                        gradientText.style.textShadow = 'none';
+                    }
+                }
+                
+                // Update link glow with intensity
                 if (twitchLinkDisplay) {
                     const linkColor = computedStyles.getPropertyValue('--today-header').trim();
-                    twitchLinkDisplay.style.textShadow = `0 0 ${linkGlow}px ${linkColor}`;
+                    if (intensity > 0) {
+                        // Parse link color and apply intensity if it's rgba
+                        const linkGlowColor = linkColor.includes('rgba') ? applyIntensityToRgba(linkColor, 1) : linkColor;
+                        twitchLinkDisplay.style.textShadow = `0 0 ${linkGlow}px ${linkGlowColor}`;
+                        twitchLinkDisplay.style.opacity = 0.8 + (0.2 * intensity); // Adjust link opacity based on intensity
+                    } else {
+                        twitchLinkDisplay.style.textShadow = 'none';
+                        twitchLinkDisplay.style.opacity = 1;
+                    }
                 }
                 
                 // Update display values
