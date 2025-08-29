@@ -966,6 +966,61 @@
                     workSchedule: document.getElementById('workDayScheduleTomorrow'),
                 }
             };
+            
+            // --- Discord Message Generator Variables (declared early to avoid reference errors) ---
+            const discordMessageOutput = document.getElementById('discordMessageOutput');
+            const copyMessageBtn = document.getElementById('copyMessageBtn');
+            const useTimestampsToggle = document.getElementById('useTimestampsToggle');
+            const timestampFormatSelect = document.getElementById('timestampFormat');
+            const discordTitleInput = document.getElementById('discordTitleInput');
+            
+            // --- Discord Message Generator Functions ---
+            function getTimestamp(date, hours, minutes) {
+                const d = new Date(date);
+                d.setHours(hours, minutes, 0, 0);
+                return Math.floor(d.getTime() / 1000);
+            }
+
+            function generateDiscordMessage() {
+                // Check if elements exist before using them
+                if (!useTimestampsToggle || !timestampFormatSelect || !discordTitleInput || !discordMessageOutput) {
+                    console.warn('Discord message generator elements not ready');
+                    return;
+                }
+                
+                const useTimestamps = useTimestampsToggle.checked;
+                const format = timestampFormatSelect.value;
+                const isTodayNormal = !scheduleControls.today.normalSchedule.classList.contains('hidden');
+                const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
+                const announcementTitle = discordTitleInput.value;
+
+                const todayTimes = isTodayNormal 
+                    ? useTimestamps
+                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 13, 0)}:${format}> to <t:${getTimestamp(today, 16, 0)}:${format}>\n- <t:${getTimestamp(today, 17, 0)}:${format}> to <t:${getTimestamp(today, 20, 0)}:${format}>\n- <t:${getTimestamp(today, 21, 0)}:${format}> to <t:${getTimestamp(tomorrow, 0, 0)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
+                    : useTimestamps
+                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 12, 30)}:${format}> to <t:${getTimestamp(today, 15, 30)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
+
+                const dayAfterTomorrow = new Date(tomorrow);
+                dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+                
+                const tomorrowTimes = isTomorrowNormal
+                    ? useTimestamps
+                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${getTimestamp(dayAfterTomorrow, 0, 0)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
+                    : useTimestamps
+                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
+                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
+                
+                const footerText = useTimestamps
+                    ? `\`\`Times auto-adjust to your timezone!\`\``
+                    : `\`\`All EST!\`\``;
+
+                const message = `@Twitch Enjoyers : ${announcementTitle}\n\nI will be streaming on Twitch \`\`Today\`\` from:\n\n${todayTimes}\n\n\`\`Tomorrow\`\` I'll be streaming from:\n\n${tomorrowTimes}\n\n${footerText}\n\nhttps://www.twitch.tv/audaciousgabe`;
+
+                discordMessageOutput.value = message;
+            }
 
             function setupScheduleToggle(day) {
                 const controls = scheduleControls[day];
@@ -1042,6 +1097,13 @@
             function setupBinding({ inputId, displayId }) {
                 const inputEl = document.getElementById(inputId);
                 const displayEl = document.getElementById(displayId);
+                
+                // Check if both elements exist before proceeding
+                if (!inputEl || !displayEl) {
+                    console.warn(`Binding failed: Element not found - inputId: ${inputId}, displayId: ${displayId}`);
+                    return;
+                }
+                
                 // Set initial value for the input from the display element
                 inputEl.value = displayEl.innerHTML;
                 // Add event listener to update display on input
@@ -1214,57 +1276,17 @@
             panelGlowSlider.addEventListener('input', updateGlowEffects);
             glowIntensitySlider.addEventListener('input', updateGlowEffects);
 
-            // --- Discord Message Generator ---
-            const discordMessageOutput = document.getElementById('discordMessageOutput');
-            const copyMessageBtn = document.getElementById('copyMessageBtn');
-            const useTimestampsToggle = document.getElementById('useTimestampsToggle');
-            const timestampFormatSelect = document.getElementById('timestampFormat');
-            const discordTitleInput = document.getElementById('discordTitleInput');
-
-            function getTimestamp(date, hours, minutes) {
-                const d = new Date(date);
-                d.setHours(hours, minutes, 0, 0);
-                return Math.floor(d.getTime() / 1000);
+            // --- Discord Message Generator Event Listeners ---
+            // (Variables and functions already declared earlier)
+            if (useTimestampsToggle) {
+                useTimestampsToggle.addEventListener('change', generateDiscordMessage);
             }
-
-            function generateDiscordMessage() {
-                const useTimestamps = useTimestampsToggle.checked;
-                const format = timestampFormatSelect.value;
-                const isTodayNormal = !scheduleControls.today.normalSchedule.classList.contains('hidden');
-                const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
-                const announcementTitle = discordTitleInput.value;
-
-                const todayTimes = isTodayNormal 
-                    ? useTimestamps
-                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 13, 0)}:${format}> to <t:${getTimestamp(today, 16, 0)}:${format}>\n- <t:${getTimestamp(today, 17, 0)}:${format}> to <t:${getTimestamp(today, 20, 0)}:${format}>\n- <t:${getTimestamp(today, 21, 0)}:${format}> to <t:${getTimestamp(tomorrow, 0, 0)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
-                    : useTimestamps
-                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 12, 30)}:${format}> to <t:${getTimestamp(today, 15, 30)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
-
-                const dayAfterTomorrow = new Date(tomorrow);
-                dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-                
-                const tomorrowTimes = isTomorrowNormal
-                    ? useTimestamps
-                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${getTimestamp(dayAfterTomorrow, 0, 0)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
-                    : useTimestamps
-                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
-                
-                const footerText = useTimestamps
-                    ? `\`\`Times auto-adjust to your timezone!\`\``
-                    : `\`\`All EST!\`\``;
-
-                const message = `@Twitch Enjoyers : ${announcementTitle}\n\nI will be streaming on Twitch \`\`Today\`\` from:\n\n${todayTimes}\n\n\`\`Tomorrow\`\` I'll be streaming from:\n\n${tomorrowTimes}\n\n${footerText}\n\nhttps://www.twitch.tv/audaciousgabe`;
-
-                discordMessageOutput.value = message;
+            if (timestampFormatSelect) {
+                timestampFormatSelect.addEventListener('change', generateDiscordMessage);
             }
-
-            useTimestampsToggle.addEventListener('change', generateDiscordMessage);
-            timestampFormatSelect.addEventListener('change', generateDiscordMessage);
-            discordTitleInput.addEventListener('input', generateDiscordMessage);
+            if (discordTitleInput) {
+                discordTitleInput.addEventListener('input', generateDiscordMessage);
+            }
 
             copyMessageBtn.addEventListener('click', () => {
                 discordMessageOutput.select();

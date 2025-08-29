@@ -1,0 +1,10 @@
+{
+  "watch": ["*.html", "*.css", "*.js", "config.json"],
+  "ext": "html,css,js,json",
+  "ignore": ["node_modules/**", "*.log", ".git/**"],
+  "delay": "500",
+  "verbose": false,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
