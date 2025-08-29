@@ -109,14 +109,47 @@ class StreamSchedulerManager:
         header_font = font.Font(family="Segoe UI", size=12, weight="bold")
         normal_font = font.Font(family="Segoe UI", size=10)
         
+        # Create canvas and scrollbar for scrolling
+        canvas = tk.Canvas(self.root, bg=bg_color, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=bg_color)
+        
+        # Configure canvas to center content
+        def configure_canvas(e=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # Center the frame horizontally
+            canvas_width = canvas.winfo_width()
+            frame_width = scrollable_frame.winfo_reqwidth()
+            if canvas_width > frame_width:
+                x = (canvas_width - frame_width) // 2
+            else:
+                x = 0
+            canvas.coords(frame_window_id, x, 0)
+        
+        scrollable_frame.bind("<Configure>", configure_canvas)
+        frame_window_id = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Update canvas when window is resized
+        canvas.bind("<Configure>", configure_canvas)
+        
         # Main container with padding
-        main_frame = tk.Frame(self.root, bg=bg_color, padx=20, pady=20)
+        main_frame = tk.Frame(scrollable_frame, bg=bg_color, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Pack canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Bind mousewheel for scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
         # Title
         title_label = tk.Label(
             main_frame,
-            text="🎮 Stream Scheduler Manager",
+            text="Stream Scheduler Manager",
             font=title_font,
             bg=bg_color,
             fg=accent_color
@@ -327,6 +360,336 @@ class StreamSchedulerManager:
             fg=fg_color,
             selectcolor=button_bg
         ).pack(side=tk.LEFT, padx=5)
+        
+        # Export Scope Setting
+        export_frame = tk.Frame(schedule_frame, bg=bg_color)
+        export_frame.grid(row=2, column=0, columnspan=2, pady=(10, 5))
+        
+        tk.Label(
+            export_frame,
+            text="Export Scope:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(side=tk.LEFT, padx=(10, 5))
+        
+        self.export_scope = tk.StringVar(value="full")
+        tk.Radiobutton(
+            export_frame,
+            text="Today Only",
+            variable=self.export_scope,
+            value="today",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color,
+            selectcolor=button_bg
+        ).pack(side=tk.LEFT, padx=5)
+        
+        tk.Radiobutton(
+            export_frame,
+            text="Full Schedule",
+            variable=self.export_scope,
+            value="full",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color,
+            selectcolor=button_bg
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Content Editor Frame
+        editor_frame = tk.LabelFrame(
+            main_frame,
+            text="Content Editor",
+            font=header_font,
+            bg=bg_color,
+            fg=fg_color,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        editor_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Timezone setting
+        tz_frame = tk.Frame(editor_frame, bg=bg_color)
+        tz_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        
+        tk.Label(
+            tz_frame,
+            text="Timezone Text:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.timezone_entry = tk.Entry(
+            tz_frame,
+            font=normal_font,
+            bg=entry_bg,
+            fg=fg_color,
+            insertbackground=fg_color,
+            relief=tk.FLAT,
+            width=30
+        )
+        self.timezone_entry.pack(side=tk.LEFT)
+        self.timezone_entry.insert(0, self.config.get("timezone", "EST"))
+        
+        # Editor Tabs
+        tab_frame = tk.Frame(editor_frame, bg=bg_color)
+        tab_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        self.active_tab = tk.StringVar(value="today")
+        
+        today_tab_btn = tk.Button(
+            tab_frame,
+            text="Edit Today",
+            font=normal_font,
+            bg=accent_color if self.active_tab.get() == "today" else button_bg,
+            fg="white",
+            relief=tk.FLAT,
+            padx=15,
+            pady=5,
+            command=lambda: self.switch_tab("today", today_tab_btn, tomorrow_tab_btn, today_edit_frame, tomorrow_edit_frame, accent_color, button_bg)
+        )
+        today_tab_btn.pack(side=tk.LEFT, padx=(0, 5))
+        
+        tomorrow_tab_btn = tk.Button(
+            tab_frame,
+            text="Edit Tomorrow",
+            font=normal_font,
+            bg=button_bg,
+            fg="white",
+            relief=tk.FLAT,
+            padx=15,
+            pady=5,
+            command=lambda: self.switch_tab("tomorrow", today_tab_btn, tomorrow_tab_btn, today_edit_frame, tomorrow_edit_frame, accent_color, button_bg)
+        )
+        tomorrow_tab_btn.pack(side=tk.LEFT)
+        
+        # Today's Editor
+        today_edit_frame = tk.Frame(editor_frame, bg=bg_color)
+        today_edit_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+        
+        # Today's Title
+        tk.Label(
+            today_edit_frame,
+            text="Today's Title:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=0, column=0, sticky=tk.W, pady=2)
+        
+        self.today_title_entry = tk.Entry(
+            today_edit_frame,
+            font=normal_font,
+            bg=entry_bg,
+            fg=fg_color,
+            insertbackground=fg_color,
+            relief=tk.FLAT,
+            width=50
+        )
+        self.today_title_entry.grid(row=0, column=1, pady=2, padx=(10, 0))
+        self.today_title_entry.insert(0, "Today's Stream")
+        
+        # Today's Normal Schedule
+        tk.Label(
+            today_edit_frame,
+            text="Normal Day:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=1, column=0, sticky=tk.W, pady=(10, 2))
+        
+        # Store entries for later access
+        self.today_normal_entries = {}
+        for i in range(1, 5):
+            tk.Label(
+                today_edit_frame,
+                text=f"  Slot {i}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=1+i, column=0, sticky=tk.W, pady=1)
+            
+            title_entry = tk.Entry(
+                today_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=20
+            )
+            title_entry.grid(row=1+i, column=1, pady=1, padx=(10, 5))
+            
+            desc_entry = tk.Entry(
+                today_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=30
+            )
+            desc_entry.grid(row=1+i, column=2, pady=1)
+            
+            self.today_normal_entries[f"slot{i}_title"] = title_entry
+            self.today_normal_entries[f"slot{i}_desc"] = desc_entry
+        
+        # Today's Work Schedule
+        tk.Label(
+            today_edit_frame,
+            text="Work Day:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=6, column=0, sticky=tk.W, pady=(10, 2))
+        
+        self.today_work_entries = {}
+        for i in range(1, 3):
+            tk.Label(
+                today_edit_frame,
+                text=f"  Slot {i}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=6+i, column=0, sticky=tk.W, pady=1)
+            
+            title_entry = tk.Entry(
+                today_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=20
+            )
+            title_entry.grid(row=6+i, column=1, pady=1, padx=(10, 5))
+            
+            desc_entry = tk.Entry(
+                today_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=30
+            )
+            desc_entry.grid(row=6+i, column=2, pady=1)
+            
+            self.today_work_entries[f"slot{i}_title"] = title_entry
+            self.today_work_entries[f"slot{i}_desc"] = desc_entry
+        
+        # Tomorrow's Editor (initially hidden)
+        tomorrow_edit_frame = tk.Frame(editor_frame, bg=bg_color)
+        # Note: not packing initially, will be shown when tab is clicked
+        
+        # Tomorrow's Title
+        tk.Label(
+            tomorrow_edit_frame,
+            text="Tomorrow's Title:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=0, column=0, sticky=tk.W, pady=2)
+        
+        self.tomorrow_title_entry = tk.Entry(
+            tomorrow_edit_frame,
+            font=normal_font,
+            bg=entry_bg,
+            fg=fg_color,
+            insertbackground=fg_color,
+            relief=tk.FLAT,
+            width=50
+        )
+        self.tomorrow_title_entry.grid(row=0, column=1, pady=2, padx=(10, 0))
+        self.tomorrow_title_entry.insert(0, "Tomorrow's Stream")
+        
+        # Tomorrow's Normal Schedule
+        tk.Label(
+            tomorrow_edit_frame,
+            text="Normal Day:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=1, column=0, sticky=tk.W, pady=(10, 2))
+        
+        self.tomorrow_normal_entries = {}
+        for i in range(1, 5):
+            tk.Label(
+                tomorrow_edit_frame,
+                text=f"  Slot {i}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=1+i, column=0, sticky=tk.W, pady=1)
+            
+            title_entry = tk.Entry(
+                tomorrow_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=20
+            )
+            title_entry.grid(row=1+i, column=1, pady=1, padx=(10, 5))
+            
+            desc_entry = tk.Entry(
+                tomorrow_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=30
+            )
+            desc_entry.grid(row=1+i, column=2, pady=1)
+            
+            self.tomorrow_normal_entries[f"slot{i}_title"] = title_entry
+            self.tomorrow_normal_entries[f"slot{i}_desc"] = desc_entry
+        
+        # Tomorrow's Work Schedule
+        tk.Label(
+            tomorrow_edit_frame,
+            text="Work Day:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).grid(row=6, column=0, sticky=tk.W, pady=(10, 2))
+        
+        self.tomorrow_work_entries = {}
+        for i in range(1, 3):
+            tk.Label(
+                tomorrow_edit_frame,
+                text=f"  Slot {i}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=6+i, column=0, sticky=tk.W, pady=1)
+            
+            title_entry = tk.Entry(
+                tomorrow_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=20
+            )
+            title_entry.grid(row=6+i, column=1, pady=1, padx=(10, 5))
+            
+            desc_entry = tk.Entry(
+                tomorrow_edit_frame,
+                font=normal_font,
+                bg=entry_bg,
+                fg=fg_color,
+                insertbackground=fg_color,
+                relief=tk.FLAT,
+                width=30
+            )
+            desc_entry.grid(row=6+i, column=2, pady=1)
+            
+            self.tomorrow_work_entries[f"slot{i}_title"] = title_entry
+            self.tomorrow_work_entries[f"slot{i}_desc"] = desc_entry
         
         # Action Buttons Frame
         button_frame = tk.Frame(main_frame, bg=bg_color)
