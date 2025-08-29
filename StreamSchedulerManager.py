@@ -691,6 +691,332 @@ class StreamSchedulerManager:
             self.tomorrow_work_entries[f"slot{i}_title"] = title_entry
             self.tomorrow_work_entries[f"slot{i}_desc"] = desc_entry
         
+        # Layout Customization Frame
+        layout_frame = tk.LabelFrame(
+            main_frame,
+            text="Layout Customization",
+            font=header_font,
+            bg=bg_color,
+            fg=fg_color,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        layout_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Outer Padding Section
+        outer_padding_label = tk.Label(
+            layout_frame,
+            text="Outer Padding",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        )
+        outer_padding_label.pack(pady=(10, 5))
+        
+        outer_padding_frame = tk.Frame(layout_frame, bg=bg_color)
+        outer_padding_frame.pack(padx=10, pady=5)
+        
+        self.outer_padding_vars = {}
+        padding_labels = ["Top", "Bottom", "Left", "Right"]
+        for i, label in enumerate(padding_labels):
+            row = i // 2
+            col = i % 2
+            
+            tk.Label(
+                outer_padding_frame,
+                text=f"{label}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=row, column=col*3, sticky=tk.W, padx=(10, 5), pady=2)
+            
+            var = tk.IntVar(value=32)
+            self.outer_padding_vars[label.lower()] = var
+            
+            scale = tk.Scale(
+                outer_padding_frame,
+                from_=0,
+                to=128,
+                orient=tk.HORIZONTAL,
+                variable=var,
+                bg=bg_color,
+                fg=fg_color,
+                troughcolor=entry_bg,
+                activebackground=accent_color,
+                highlightthickness=0,
+                length=150
+            )
+            scale.grid(row=row, column=col*3+1, padx=5, pady=2)
+            
+            value_label = tk.Label(
+                outer_padding_frame,
+                text=f"{var.get()}px",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color,
+                width=5
+            )
+            value_label.grid(row=row, column=col*3+2, padx=(0, 10), pady=2)
+            
+            var.trace('w', lambda *args, lbl=value_label, v=var: lbl.config(text=f"{v.get()}px"))
+        
+        # Inner Padding Section
+        inner_padding_label = tk.Label(
+            layout_frame,
+            text="Inner Padding",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        )
+        inner_padding_label.pack(pady=(10, 5))
+        
+        inner_padding_frame = tk.Frame(layout_frame, bg=bg_color)
+        inner_padding_frame.pack(padx=10, pady=5)
+        
+        self.inner_padding_vars = {}
+        for i, label in enumerate(padding_labels):
+            row = i // 2
+            col = i % 2
+            
+            tk.Label(
+                inner_padding_frame,
+                text=f"{label}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=row, column=col*3, sticky=tk.W, padx=(10, 5), pady=2)
+            
+            var = tk.IntVar(value=32)
+            self.inner_padding_vars[label.lower()] = var
+            
+            scale = tk.Scale(
+                inner_padding_frame,
+                from_=0,
+                to=128,
+                orient=tk.HORIZONTAL,
+                variable=var,
+                bg=bg_color,
+                fg=fg_color,
+                troughcolor=entry_bg,
+                activebackground=accent_color,
+                highlightthickness=0,
+                length=150
+            )
+            scale.grid(row=row, column=col*3+1, padx=5, pady=2)
+            
+            value_label = tk.Label(
+                inner_padding_frame,
+                text=f"{var.get()}px",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color,
+                width=5
+            )
+            value_label.grid(row=row, column=col*3+2, padx=(0, 10), pady=2)
+            
+            var.trace('w', lambda *args, lbl=value_label, v=var: lbl.config(text=f"{v.get()}px"))
+        
+        # Glow Effects Section
+        glow_label = tk.Label(
+            layout_frame,
+            text="Glow Effects",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        )
+        glow_label.pack(pady=(10, 5))
+        
+        glow_frame = tk.Frame(layout_frame, bg=bg_color)
+        glow_frame.pack(padx=10, pady=(5, 15))
+        
+        self.glow_vars = {}
+        glow_settings = [
+            ("Title Glow", "title", 60, 20),
+            ("Link Glow", "link", 40, 15),
+            ("Panel Glow", "panel", 120, 50),
+            ("Glow Intensity", "intensity", 100, 50)
+        ]
+        
+        for i, (label, key, max_val, default) in enumerate(glow_settings):
+            row = i // 2
+            col = i % 2
+            
+            tk.Label(
+                glow_frame,
+                text=f"{label}:",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color
+            ).grid(row=row, column=col*3, sticky=tk.W, padx=(10, 5), pady=2)
+            
+            var = tk.IntVar(value=default)
+            self.glow_vars[key] = var
+            
+            scale = tk.Scale(
+                glow_frame,
+                from_=0,
+                to=max_val,
+                orient=tk.HORIZONTAL,
+                variable=var,
+                bg=bg_color,
+                fg=fg_color,
+                troughcolor=entry_bg,
+                activebackground=accent_color,
+                highlightthickness=0,
+                length=150
+            )
+            scale.grid(row=row, column=col*3+1, padx=5, pady=2)
+            
+            unit = "%" if key == "intensity" else "px"
+            value_label = tk.Label(
+                glow_frame,
+                text=f"{var.get()}{unit}",
+                font=normal_font,
+                bg=bg_color,
+                fg=fg_color,
+                width=5
+            )
+            value_label.grid(row=row, column=col*3+2, padx=(0, 10), pady=2)
+            
+            var.trace('w', lambda *args, lbl=value_label, v=var, u=unit: lbl.config(text=f"{v.get()}{u}"))
+        
+        # Discord Message Generator Frame
+        discord_frame = tk.LabelFrame(
+            main_frame,
+            text="Discord Message Generator",
+            font=header_font,
+            bg=bg_color,
+            fg=fg_color,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        discord_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Announcement Title
+        title_frame = tk.Frame(discord_frame, bg=bg_color)
+        title_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        
+        tk.Label(
+            title_frame,
+            text="Announcement Title:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.discord_title_entry = tk.Entry(
+            title_frame,
+            font=normal_font,
+            bg=entry_bg,
+            fg=fg_color,
+            insertbackground=fg_color,
+            relief=tk.FLAT,
+            width=40
+        )
+        self.discord_title_entry.pack(side=tk.LEFT)
+        self.discord_title_entry.insert(0, "Doubling our Usual Hours! ✨👏")
+        
+        # Timestamp settings
+        timestamp_frame = tk.Frame(discord_frame, bg=bg_color)
+        timestamp_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Label(
+            timestamp_frame,
+            text="Timestamp Format:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.timestamp_format = tk.StringVar(value="t")
+        timestamp_options = [
+            ("t", "Short Time"),
+            ("T", "Long Time"),
+            ("d", "Short Date"),
+            ("D", "Long Date"),
+            ("f", "Short Date/Time"),
+            ("F", "Long Date/Time"),
+            ("R", "Relative Time")
+        ]
+        
+        timestamp_menu = tk.OptionMenu(
+            timestamp_frame,
+            self.timestamp_format,
+            *[opt[0] for opt in timestamp_options]
+        )
+        timestamp_menu.config(
+            bg=entry_bg,
+            fg=fg_color,
+            activebackground=accent_color,
+            activeforeground="white",
+            relief=tk.FLAT
+        )
+        timestamp_menu.pack(side=tk.LEFT, padx=(0, 20))
+        
+        self.use_timestamps = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            timestamp_frame,
+            text="Use Discord Timestamps",
+            variable=self.use_timestamps,
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color,
+            selectcolor=button_bg,
+            activebackground=bg_color
+        ).pack(side=tk.LEFT)
+        
+        # Discord Message Output
+        self.discord_output = tk.Text(
+            discord_frame,
+            font=normal_font,
+            bg=entry_bg,
+            fg=fg_color,
+            insertbackground=fg_color,
+            relief=tk.FLAT,
+            height=10,
+            width=60
+        )
+        self.discord_output.pack(padx=10, pady=5)
+        
+        # Copy Message Button
+        copy_btn = tk.Button(
+            discord_frame,
+            text="Copy Message",
+            font=normal_font,
+            bg=accent_color,
+            fg="white",
+            relief=tk.FLAT,
+            padx=15,
+            pady=5,
+            command=self.copy_discord_message
+        )
+        copy_btn.pack(pady=(0, 10))
+        
+        # Export Schedule Frame
+        export_frame = tk.LabelFrame(
+            main_frame,
+            text="Export Schedule",
+            font=header_font,
+            bg=bg_color,
+            fg=fg_color,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        export_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        export_btn = tk.Button(
+            export_frame,
+            text="💾 Download Schedule as PNG",
+            font=header_font,
+            bg=accent_color,
+            fg="white",
+            relief=tk.FLAT,
+            padx=20,
+            pady=10,
+            command=self.export_schedule
+        )
+        export_btn.pack(pady=15)
+        
         # Action Buttons Frame
         button_frame = tk.Frame(main_frame, bg=bg_color)
         button_frame.pack(fill=tk.X, pady=20)
