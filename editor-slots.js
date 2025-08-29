@@ -114,11 +114,14 @@ class EditorSlotManager {
                            class="editor-input rounded p-2" 
                            value="${slot.desc}">
                 </div>
-                <input type="text" 
-                       id="${slotKey}Slot${index + 1}TimeInput" 
-                       placeholder="Time" 
-                       class="editor-input rounded p-2 w-40" 
-                       value="${slot.time}">
+                <div class="relative">
+                    <input type="text" 
+                           id="${slotKey}Slot${index + 1}TimeInput" 
+                           placeholder="Time" 
+                           class="editor-input rounded p-2 w-40 cursor-pointer" 
+                           value="${slot.time}"
+                           readonly>
+                </div>
                 <button onclick="editorSlotManager.deleteSlot('${slotKey}', ${index})" 
                         class="delete-editor-btn bg-red-500 hover:bg-red-600 text-white p-2 rounded transition-colors"
                         title="Delete this slot">
@@ -146,10 +149,9 @@ class EditorSlotManager {
                 this.saveSlots();
             });
             
-            timeInput.addEventListener('input', (e) => {
-                this.slots[slotKey][index].time = e.target.value;
-                this.updateDisplay(slotKey, index);
-                this.saveSlots();
+            // Add click handler for time picker
+            timeInput.addEventListener('click', (e) => {
+                this.showTimePicker(e.target, slotKey, index);
             });
         });
         
@@ -319,6 +321,136 @@ class EditorSlotManager {
         Object.keys(this.slots).forEach(slotKey => {
             this.updateDisplayForSlotKey(slotKey);
         });
+    }
+    
+    showTimePicker(inputElement, slotKey, slotIndex) {
+        // Remove any existing time picker
+        const existingPicker = document.getElementById('timePickerWidget');
+        if (existingPicker) {
+            existingPicker.remove();
+        }
+        
+        // Create time picker widget
+        const picker = document.createElement('div');
+        picker.id = 'timePickerWidget';
+        picker.className = 'absolute z-50 border border-[var(--border-primary)] rounded-lg shadow-xl p-4 mt-2';
+        picker.style.minWidth = '320px';
+        picker.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || '#111827';
+        
+        // Parse current time
+        const currentTime = this.slots[slotKey][slotIndex].time;
+        const timeMatch = currentTime.match(/(\d{1,2}):(\d{2}) (AM|PM) - (\d{1,2}):(\d{2}) (AM|PM)/);
+        
+        let startHour = 9, startMin = 30, startAmPm = 'AM';
+        let endHour = 12, endMin = 30, endAmPm = 'PM';
+        
+        if (timeMatch) {
+            startHour = parseInt(timeMatch[1]);
+            startMin = parseInt(timeMatch[2]);
+            startAmPm = timeMatch[3];
+            endHour = parseInt(timeMatch[4]);
+            endMin = parseInt(timeMatch[5]);
+            endAmPm = timeMatch[6];
+        }
+        
+        picker.innerHTML = `
+            <div class="space-y-4">
+                <div class="text-sm font-semibold text-[var(--text-secondary)] mb-2">Select Time Range</div>
+                
+                <!-- Start Time -->
+                <div>
+                    <label class="text-xs text-[var(--text-muted)] block mb-1">Start Time</label>
+                    <div class="flex gap-2">
+                        <select id="startHour" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            ${Array.from({length: 12}, (_, i) => `<option value="${i+1}" ${startHour === i+1 ? 'selected' : ''}>${i+1}</option>`).join('')}
+                        </select>
+                        <span class="text-[var(--text-secondary)] self-center">:</span>
+                        <select id="startMin" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            <option value="00" ${startMin === 0 ? 'selected' : ''}>00</option>
+                            <option value="15" ${startMin === 15 ? 'selected' : ''}>15</option>
+                            <option value="30" ${startMin === 30 ? 'selected' : ''}>30</option>
+                            <option value="45" ${startMin === 45 ? 'selected' : ''}>45</option>
+                        </select>
+                        <select id="startAmPm" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            <option value="AM" ${startAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                            <option value="PM" ${startAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- End Time -->
+                <div>
+                    <label class="text-xs text-[var(--text-muted)] block mb-1">End Time</label>
+                    <div class="flex gap-2">
+                        <select id="endHour" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            ${Array.from({length: 12}, (_, i) => `<option value="${i+1}" ${endHour === i+1 ? 'selected' : ''}>${i+1}</option>`).join('')}
+                        </select>
+                        <span class="text-[var(--text-secondary)] self-center">:</span>
+                        <select id="endMin" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            <option value="00" ${endMin === 0 ? 'selected' : ''}>00</option>
+                            <option value="15" ${endMin === 15 ? 'selected' : ''}>15</option>
+                            <option value="30" ${endMin === 30 ? 'selected' : ''}>30</option>
+                            <option value="45" ${endMin === 45 ? 'selected' : ''}>45</option>
+                        </select>
+                        <select id="endAmPm" class="bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--text-primary)] rounded px-2 py-1">
+                            <option value="AM" ${endAmPm === 'AM' ? 'selected' : ''}>AM</option>
+                            <option value="PM" ${endAmPm === 'PM' ? 'selected' : ''}>PM</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-2 pt-2 border-t border-[var(--border-primary)]">
+                    <button id="applyTime" class="flex-1 bg-[var(--btn-active-bg)] text-white py-2 px-4 rounded font-semibold hover:opacity-90 transition-opacity">Apply</button>
+                    <button id="cancelTime" class="flex-1 bg-[var(--btn-inactive-bg)] text-white py-2 px-4 rounded font-semibold hover:opacity-90 transition-opacity">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        // Position the picker below the input
+        const rect = inputElement.getBoundingClientRect();
+        const parentRect = inputElement.closest('.slot-editor-row').getBoundingClientRect();
+        
+        picker.style.position = 'absolute';
+        picker.style.top = (rect.bottom - parentRect.top + 5) + 'px';
+        picker.style.left = (rect.left - parentRect.left) + 'px';
+        
+        // Add to parent
+        inputElement.closest('.slot-editor-row').appendChild(picker);
+        inputElement.closest('.slot-editor-row').style.position = 'relative';
+        
+        // Apply button handler
+        picker.querySelector('#applyTime').addEventListener('click', () => {
+            const startH = picker.querySelector('#startHour').value;
+            const startM = picker.querySelector('#startMin').value;
+            const startA = picker.querySelector('#startAmPm').value;
+            const endH = picker.querySelector('#endHour').value;
+            const endM = picker.querySelector('#endMin').value;
+            const endA = picker.querySelector('#endAmPm').value;
+            
+            const newTime = `${startH}:${startM} ${startA} - ${endH}:${endM} ${endA}`;
+            inputElement.value = newTime;
+            this.slots[slotKey][slotIndex].time = newTime;
+            this.updateDisplay(slotKey, slotIndex);
+            this.saveSlots();
+            picker.remove();
+        });
+        
+        // Cancel button handler
+        picker.querySelector('#cancelTime').addEventListener('click', () => {
+            picker.remove();
+        });
+        
+        // Close picker when clicking outside
+        setTimeout(() => {
+            const closeOnClickOutside = (e) => {
+                if (!picker.contains(e.target) && e.target !== inputElement) {
+                    picker.remove();
+                    document.removeEventListener('click', closeOnClickOutside);
+                }
+            };
+            document.addEventListener('click', closeOnClickOutside);
+        }, 100);
     }
 }
 
