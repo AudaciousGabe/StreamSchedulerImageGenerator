@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/modern-screenshot/dist/modern-screenshot.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.1.0/dist/dom-to-image-more.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -261,23 +262,8 @@
             bottom: 100%;
             right: 0;
             margin-bottom: 8px;
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            grid-template-columns: repeat(6, 1fr);
-            gap: 0.25rem;
-            width: 200px;
-        }
-        .emoji-btn {
-            cursor: pointer;
-            font-size: 1.25rem;
-            border-radius: 0.25rem;
-            transition: background-color 0.2s;
-        }
-        .emoji-btn:hover {
-            background-color: var(--btn-inactive-bg);
+            z-index: 50;
+            width: 320px;
         }
     </style>
 </head>
@@ -659,9 +645,9 @@
                     <label for="discordTitleInput" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Announcement Title</label>
                     <div class="flex items-center gap-2">
                         <input type="text" id="discordTitleInput" class="editor-input w-full rounded-md p-2" value="Doubling our Usual Hours! ✨👏">
-                        <button id="emojiBtn" class="schedule-btn active text-white font-bold py-2 px-4 rounded-lg">😀</button>
+                        <button id="emojiBtn" class="schedule-btn active text-white font-bold py-2 px-4 rounded-lg" title="Insert emoji">😀</button>
                     </div>
-                    <div id="emojiPicker" class="grid"></div>
+                    <emoji-picker id="emojiPicker" theme="dark"></emoji-picker>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -680,7 +666,7 @@
                          <div class="flex items-center gap-4">
                             <span class="text-sm font-medium text-[var(--text-secondary)]">Default</span>
                             <label for="useTimestampsToggle" class="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" value="" id="useTimestampsToggle" class="sr-only peer">
+                              <input type="checkbox" value="" id="useTimestampsToggle" class="sr-only peer" checked>
                               <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
                             </label>
                             <span class="text-sm font-medium text-[var(--text-secondary)]">Timestamps</span>
@@ -951,26 +937,25 @@
                 }, 2000);
             });
 
-            // --- Emoji Picker ---
+            // --- Emoji Picker (emoji-picker-element) ---
             const emojiBtn = document.getElementById('emojiBtn');
             const emojiPicker = document.getElementById('emojiPicker');
-            const emojis = ['😀', '😂', '😍', '🤔', '😎', '😭', '🥳', '🤯', '✨', '👏', '🔥', '💯', '✅', '🚀', '👀', '👋', '🎉', '🌟'];
-            
-            emojis.forEach(emoji => {
-                const button = document.createElement('button');
-                button.textContent = emoji;
-                button.className = 'emoji-btn';
-                button.onclick = () => {
-                    discordTitleInput.value += emoji;
+
+            // Ensure dark theme for picker to match app theme
+            try { emojiPicker.setAttribute('theme', 'dark'); } catch {}
+
+            emojiPicker.addEventListener('emoji-click', (event) => {
+                const { unicode } = event.detail || {};
+                if (unicode) {
+                    discordTitleInput.value += unicode;
                     emojiPicker.style.display = 'none';
                     generateDiscordMessage();
-                };
-                emojiPicker.appendChild(button);
+                }
             });
 
             emojiBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                emojiPicker.style.display = emojiPicker.style.display === 'grid' ? 'none' : 'grid';
+                emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
             });
 
             document.addEventListener('click', (e) => {
