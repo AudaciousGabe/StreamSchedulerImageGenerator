@@ -265,6 +265,53 @@
             z-index: 50;
             width: 320px;
         }
+
+        /* Weekly Planner Styles */
+        .week-day-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        .week-day-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .day-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: var(--today-accent-bg);
+            color: var(--today-accent);
+        }
+        #weeklyPlannerModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .modal-content {
+            max-width: 90%;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 1rem;
+            padding: 2rem;
+        }
+        .screenshot-preview {
+            margin-bottom: 2rem;
+            border: 2px solid var(--border-primary);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300">
@@ -592,15 +639,15 @@
                     <div>
                         <label for="outerPaddingLeft" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Left</label>
                          <div class="flex items-center gap-4">
-                            <input id="outerPaddingLeft" type="range" min="0" max="128" value="0" class="w-full">
-                            <span id="outerPaddingLeftValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">0px</span>
+                            <input id="outerPaddingLeft" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="outerPaddingLeftValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
                         </div>
                     </div>
                     <div>
                         <label for="outerPaddingRight" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Right</label>
                          <div class="flex items-center gap-4">
-                            <input id="outerPaddingRight" type="range" min="0" max="128" value="0" class="w-full">
-                            <span id="outerPaddingRightValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">0px</span>
+                            <input id="outerPaddingRight" type="range" min="0" max="128" value="32" class="w-full">
+                            <span id="outerPaddingRightValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
                         </div>
                     </div>
                     <!-- Inner Padding -->
@@ -690,6 +737,43 @@
                     <p class="text-xs text-center text-[var(--text-muted)] mt-2">
                         Note: Screenshot mode provides best quality. Direct download may have rendering issues.
                     </p>
+                </div>
+            </div>
+
+            <!-- Weekly Planner -->
+            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Weekly Schedule Planner</h3>
+                <p class="text-sm text-center text-[var(--text-muted)] mb-6">Plan your entire week and generate individual schedule images for each day</p>
+                
+                <!-- Days Grid -->
+                <div id="weekDayCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6"></div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="generateWeeklyScreenshots" class="schedule-btn active flex-1 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        📅 Generate Week Screenshots
+                    </button>
+                    <button id="previewWeeklySchedule" class="schedule-btn active flex-1 text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        👁️ Preview All Days
+                    </button>
+                </div>
+            </div>
+
+            <!-- Weekly Preview Modal -->
+            <div id="weeklyPlannerModal">
+                <div class="modal-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-[var(--text-primary)]">Weekly Schedule Preview</h2>
+                        <button id="closeWeeklyModal" class="text-3xl text-[var(--text-muted)] hover:text-[var(--text-primary)]">&times;</button>
+                    </div>
+                    <div id="weeklyPreviewContainer" class="space-y-8">
+                        <!-- Preview content will be generated here -->
+                    </div>
+                    <div class="mt-6 flex justify-center">
+                        <button id="downloadAllWeekly" class="schedule-btn active text-white font-bold py-3 px-8 rounded-lg transition-transform hover:scale-105">
+                            💾 Download All as ZIP
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1193,11 +1277,311 @@
             //     }
             // });
 
+            // --- Weekly Planner ---
+            const weekDayCardsContainer = document.getElementById('weekDayCards');
+            const generateWeeklyBtn = document.getElementById('generateWeeklyScreenshots');
+            const previewWeeklyBtn = document.getElementById('previewWeeklySchedule');
+            const weeklyModal = document.getElementById('weeklyPlannerModal');
+            const closeWeeklyModal = document.getElementById('closeWeeklyModal');
+            const weeklyPreviewContainer = document.getElementById('weeklyPreviewContainer');
+            const downloadAllWeeklyBtn = document.getElementById('downloadAllWeekly');
+
+            const weekThemeOrder = ['twilight','sunrise','forest','oceanic','cyberpunk','pastel','arctic'];
+
+            function getWeekDates(startDate) {
+                return Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date(startDate);
+                    d.setDate(startDate.getDate() + i);
+                    d.setHours(0,0,0,0);
+                    return d;
+                });
+            }
+            
+            const weekPlan = getWeekDates(today).map(d => ({ date: d, isWork: false }));
+            
+            function formatLong(d) {
+                return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            }
+            function formatShort(d) {
+                return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            }
+            function ymd(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth()+1).padStart(2,'0');
+                const day = String(d.getDate()).padStart(2,'0');
+                return `${y}-${m}-${day}`;
+            }
+            function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+            function buildWeekCards() {
+                if (!weekDayCardsContainer) return;
+                weekDayCardsContainer.innerHTML = '';
+                weekPlan.forEach((item, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'week-day-card';
+                    const label = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : item.date.toLocaleDateString('en-US', { weekday: 'long' });
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="day-badge">${label}</span>
+                            <span class="text-sm text-[var(--text-muted)]">${formatShort(item.date)}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-[var(--text-secondary)]">Normal</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="weekToggle-${idx}" class="sr-only peer" ${item.isWork ? 'checked' : ''}>
+                                <div class="w-11 h-6 bg-[var(--btn-inactive-bg)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--btn-active-bg)]"></div>
+                            </label>
+                            <span class="text-sm font-medium text-[var(--text-secondary)]">Work</span>
+                        </div>
+                    `;
+                    weekDayCardsContainer.appendChild(card);
+                    const toggle = card.querySelector(`#weekToggle-${idx}`);
+                    toggle.addEventListener('change', () => {
+                        weekPlan[idx].isWork = toggle.checked;
+                    });
+                });
+            }
+            buildWeekCards();
+
+            function setTheme(theme) {
+                const baseClasses = 'bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300';
+                document.body.className = `${baseClasses} theme-${theme}`;
+                // Update active state on theme buttons if visible
+                try {
+                    const container = document.getElementById('theme-buttons');
+                    const currentActive = container.querySelector('.active');
+                    if (currentActive) currentActive.classList.remove('active');
+                    const newBtn = container.querySelector(`[data-theme="${theme}"]`);
+                    if (newBtn) newBtn.classList.add('active');
+                } catch {}
+            }
+
+            function setTodaySchedule(isWork) {
+                // Use existing button handlers to keep UI in sync
+                if (isWork) {
+                    scheduleControls.today.workBtn.click();
+                } else {
+                    scheduleControls.today.normalBtn.click();
+                }
+            }
+
+            function setTodayHeaderForDate(d) {
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+                const md = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                todayTitleEl.innerHTML = `${dayName}'s Stream &bull; ${md}`;
+            }
+
+            async function captureCurrentPanel(pixelRatio = 3) {
+                // Hide transient UI (emoji picker) during capture
+                try { document.getElementById('emojiPicker').style.display = 'none'; } catch {}
+                const elementToCapture = document.getElementById('outerPaddingContainer');
+                const bgVar = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+                const backgroundColor = bgVar || '#111827';
+                let dataUrl;
+                // Let layout settle
+                await sleep(50);
+                try {
+                    if (window.htmlToImage && typeof window.htmlToImage.toPng === 'function') {
+                        dataUrl = await window.htmlToImage.toPng(elementToCapture, {
+                            pixelRatio,
+                            cacheBust: true,
+                            backgroundColor,
+                            filter: (node) => {
+                                if (!node || !node.tagName) return true;
+                                if (node.id === 'weeklyPlannerModal') return false; // exclude modal if open
+                                if (node.tagName === 'SCRIPT') return false;
+                                return true;
+                            }
+                        });
+                    }
+                } catch {}
+                if (!dataUrl) {
+                    try {
+                        if (window.modernScreenshot && typeof window.modernScreenshot.domToPng === 'function') {
+                            dataUrl = await window.modernScreenshot.domToPng(elementToCapture, {
+                                backgroundColor,
+                                scale: (window.devicePixelRatio || 2)
+                            });
+                        } else {
+                            throw new Error('modern-screenshot not available');
+                        }
+                    } catch (msErr) {
+                        try {
+                            dataUrl = await domtoimage.toPng(elementToCapture, {
+                                bgcolor: backgroundColor,
+                                width: elementToCapture.offsetWidth,
+                                height: elementToCapture.scrollHeight,
+                                cacheBust: true,
+                                imagePlaceholder: undefined,
+                                filter: (node) => {
+                                    if (!node || !node.tagName) return true;
+                                    if (node.id === 'weeklyPlannerModal') return false;
+                                    if (node.tagName === 'SCRIPT') return false;
+                                    return true;
+                                }
+                            });
+                        } catch (dtiErr) {
+                            console.error('Weekly export failed', msErr, dtiErr);
+                            throw dtiErr;
+                        }
+                    }
+                }
+                return dataUrl;
+            }
+
+            async function generateWeekImages(options = { pixelRatio: 3, download: true }) {
+                const { pixelRatio, download } = options;
+                // Preserve original state
+                const originalTodayTitle = todayTitleEl.innerHTML;
+                const originalTomorrowTitle = tomorrowTitleEl.innerHTML;
+                const originalBodyClass = document.body.className;
+                const originalPanelScopeChecked = panelScopeToggle.checked;
+                const originalIsWork = !scheduleControls.today.workSchedule.classList.contains('hidden'); // work shown means true
+
+                // Force Today Only scope
+                if (panelScopeToggle.checked) {
+                    panelScopeToggle.checked = false;
+                    panelScopeToggle.dispatchEvent(new Event('change'));
+                }
+
+                const results = [];
+                for (let i = 0; i < weekPlan.length; i++) {
+                    const { date, isWork } = weekPlan[i];
+                    const theme = weekThemeOrder[i % weekThemeOrder.length];
+
+                    // Apply theme and schedule
+                    setTheme(theme);
+                    setTodaySchedule(isWork);
+                    setTodayHeaderForDate(date);
+
+                    // Capture
+                    const dataUrl = await captureCurrentPanel(pixelRatio);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                    const fileName = `schedule_${ymd(date)}_${dayName.toLowerCase()}_${theme}_${isWork ? 'work' : 'normal'}.png`;
+                    results.push({ name: fileName, dataUrl });
+
+                    if (download) {
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = dataUrl;
+                        link.click();
+                        await sleep(150); // small delay between downloads
+                    }
+                    if (generateWeeklyBtn) {
+                        generateWeeklyBtn.textContent = `Generating... (${i+1}/7)`;
+                    }
+                }
+
+                // Restore state
+                todayTitleEl.innerHTML = originalTodayTitle;
+                tomorrowTitleEl.innerHTML = originalTomorrowTitle;
+                document.body.className = originalBodyClass;
+                setTodaySchedule(originalIsWork);
+                if (panelScopeToggle.checked !== originalPanelScopeChecked) {
+                    panelScopeToggle.checked = originalPanelScopeChecked;
+                    panelScopeToggle.dispatchEvent(new Event('change'));
+                }
+
+                return results;
+            }
+
+            if (generateWeeklyBtn) {
+                generateWeeklyBtn.addEventListener('click', async () => {
+                    try {
+                        generateWeeklyBtn.disabled = true;
+                        generateWeeklyBtn.textContent = 'Preparing...';
+                        await generateWeekImages({ pixelRatio: 3, download: true });
+                        generateWeeklyBtn.textContent = 'Done!';
+                        setTimeout(() => {
+                            generateWeeklyBtn.textContent = '📅 Generate Week Screenshots';
+                            generateWeeklyBtn.disabled = false;
+                        }, 1200);
+                    } catch (e) {
+                        console.error(e);
+                        generateWeeklyBtn.textContent = 'Error - Try Again';
+                        setTimeout(() => {
+                            generateWeeklyBtn.textContent = '📅 Generate Week Screenshots';
+                            generateWeeklyBtn.disabled = false;
+                        }, 2000);
+                    }
+                });
+            }
+
+            if (previewWeeklyBtn) {
+                previewWeeklyBtn.addEventListener('click', async () => {
+                    try {
+                        previewWeeklyBtn.disabled = true;
+                        previewWeeklyBtn.textContent = 'Generating Previews...';
+                        const images = await generateWeekImages({ pixelRatio: 1.5, download: false });
+                        weeklyPreviewContainer.innerHTML = '';
+                        images.forEach((img, i) => {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'screenshot-preview';
+                            const meta = document.createElement('div');
+                            meta.className = 'px-3 py-2 text-sm text-[var(--text-secondary)] flex items-center justify-between bg-[var(--bg-secondary)] border-b border-[var(--border-primary)]';
+                            const [ , ymdPart, dayPart, theme, mode ] = img.name.replace('.png','').split('_');
+                            meta.textContent = `${ymdPart} • ${dayPart.toUpperCase()} • ${theme} • ${mode}`;
+                            const imageEl = document.createElement('img');
+                            imageEl.src = img.dataUrl;
+                            imageEl.alt = img.name;
+                            imageEl.style.width = '100%';
+                            wrap.appendChild(meta);
+                            wrap.appendChild(imageEl);
+                            weeklyPreviewContainer.appendChild(wrap);
+                        });
+                        weeklyModal.style.display = 'block';
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        previewWeeklyBtn.textContent = '👁️ Preview All Days';
+                        previewWeeklyBtn.disabled = false;
+                    }
+                });
+            }
+            if (closeWeeklyModal) {
+                closeWeeklyModal.addEventListener('click', () => { weeklyModal.style.display = 'none'; });
+            }
+            if (downloadAllWeeklyBtn) {
+                downloadAllWeeklyBtn.addEventListener('click', async () => {
+                    try {
+                        downloadAllWeeklyBtn.disabled = true;
+                        downloadAllWeeklyBtn.textContent = 'Zipping...';
+                        const images = await generateWeekImages({ pixelRatio: 3, download: false });
+                        if (!window.JSZip) throw new Error('JSZip not loaded');
+                        const zip = new JSZip();
+                        images.forEach(img => {
+                            const base64 = img.dataUrl.split(',')[1];
+                            zip.file(img.name, base64, { base64: true });
+                        });
+                        const blob = await zip.generateAsync({ type: 'blob' });
+                        if (window.saveAs) {
+                            window.saveAs(blob, `weekly_schedules_${ymd(new Date())}.zip`);
+                        } else {
+                            // Fallback: trigger download via object URL
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `weekly_schedules_${ymd(new Date())}.zip`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }
+                        downloadAllWeeklyBtn.textContent = 'Downloaded!';
+                        setTimeout(() => { downloadAllWeeklyBtn.textContent = '💾 Download All as ZIP'; downloadAllWeeklyBtn.disabled = false; }, 1200);
+                    } catch (e) {
+                        console.error(e);
+                        downloadAllWeeklyBtn.textContent = 'Error - Try Again';
+                        setTimeout(() => { downloadAllWeeklyBtn.textContent = '💾 Download All as ZIP'; downloadAllWeeklyBtn.disabled = false; }, 2000);
+                    }
+                });
+            }
+
             // Initial generation
             generateDiscordMessage();
         });
     </script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script>
     document.getElementById('exportBtn').addEventListener('click', async function () {
         const exportBtn = this;
