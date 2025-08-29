@@ -1,0 +1,18 @@
+{
+  "channel": {
+    "name": "AudaciousJr",
+    "link": "https://www.twitch.tv/audaciousjr"
+  },
+  "theme": "forest",
+  "timezone": "EST",
+  "schedule": {
+    "today": {
+      "type": "normal",
+      "title": "Today's Stream"
+    },
+    "tomorrow": {
+      "type": "work",
+      "title": "Tomorrow's Stream"
+    }
+  }
+}

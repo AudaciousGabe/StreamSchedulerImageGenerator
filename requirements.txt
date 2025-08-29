@@ -1,0 +1,24 @@
+# Stream Scheduler Manager Requirements
+# Python 3.7+ required
+
+# Web Framework and API
+flask==3.0.0
+flask-cors==4.0.0
+
+# GUI Framework (Tkinter comes built-in with Python)
+# No pip installation needed for tkinter
+
+# Optional: For better Windows compatibility
+pywin32==306 ; platform_system=="Windows"
+
+# Optional: For enhanced development experience
+python-dotenv==1.0.0
+
+# Note: The following are part of Python's standard library and don't need installation:
+# - tkinter (GUI framework)
+# - json (JSON handling)
+# - webbrowser (opening browser)
+# - threading (multi-threading support)
+# - pathlib (file path handling)
+# - time (time operations)
+# - sys (system operations)

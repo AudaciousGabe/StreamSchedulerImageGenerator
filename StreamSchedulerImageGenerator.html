@@ -844,6 +844,85 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Load Configuration from Server ---
+            async function loadConfigFromServer() {
+                try {
+                    const response = await fetch('http://127.0.0.1:5555/api/config');
+                    if (response.ok) {
+                        const config = await response.json();
+                        
+                        // Apply channel configuration
+                        if (config.channel) {
+                            const channelNameDisplay = document.getElementById('channelNameDisplay');
+                            const channelNameInput = document.getElementById('channelNameInput');
+                            const twitchLinkDisplay = document.getElementById('twitchLinkDisplay');
+                            const twitchLinkInput = document.getElementById('twitchLinkInput');
+                            
+                            if (config.channel.name) {
+                                channelNameDisplay.textContent = config.channel.name;
+                                channelNameInput.value = config.channel.name;
+                            }
+                            
+                            if (config.channel.link) {
+                                const url = config.channel.link;
+                                twitchLinkDisplay.href = url;
+                                twitchLinkInput.value = url;
+                                // Extract username from URL for display text
+                                const match = url.match(/twitch\.tv\/([^/?]+)/);
+                                if (match) {
+                                    twitchLinkDisplay.textContent = `twitch.tv/${match[1]}`;
+                                } else {
+                                    twitchLinkDisplay.textContent = url;
+                                }
+                            }
+                        }
+                        
+                        // Apply theme
+                        if (config.theme) {
+                            document.body.className = `bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300 theme-${config.theme}`;
+                            // Update theme button selection
+                            const themeButtons = document.querySelectorAll('.theme-btn');
+                            themeButtons.forEach(btn => {
+                                if (btn.dataset.theme === config.theme) {
+                                    btn.classList.add('active');
+                                } else {
+                                    btn.classList.remove('active');
+                                }
+                            });
+                        }
+                        
+                        // Apply schedule types
+                        if (config.schedule) {
+                            if (config.schedule.today && config.schedule.today.type) {
+                                if (config.schedule.today.type === 'work') {
+                                    document.getElementById('setWorkDayToday').click();
+                                } else {
+                                    document.getElementById('setNormalDayToday').click();
+                                }
+                            }
+                            
+                            if (config.schedule.tomorrow && config.schedule.tomorrow.type) {
+                                if (config.schedule.tomorrow.type === 'work') {
+                                    document.getElementById('setWorkDayTomorrow').click();
+                                } else {
+                                    document.getElementById('setNormalDayTomorrow').click();
+                                }
+                            }
+                        }
+                        
+                        console.log('Configuration loaded from server:', config);
+                    } else {
+                        console.log('Server not available, using default configuration');
+                    }
+                } catch (error) {
+                    console.log('Failed to load config from server:', error);
+                    console.log('Using default configuration');
+                }
+            }
+            
+            // Try to load configuration from server
+            loadConfigFromServer();
+            
             // --- Date Setup ---
             const today = new Date();
             const tomorrow = new Date(today);
