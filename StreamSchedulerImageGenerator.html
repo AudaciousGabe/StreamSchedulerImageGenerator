@@ -1080,6 +1080,45 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 return Math.floor(d.getTime() / 1000);
             }
 
+            // Helper function to parse time string to hours and minutes
+            function parseTimeString(timeStr) {
+                const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                if (!match) return null;
+                
+                let hours = parseInt(match[1]);
+                const minutes = parseInt(match[2]);
+                const ampm = match[3].toUpperCase();
+                
+                // Convert to 24-hour format for timestamp calculation
+                if (ampm === 'PM' && hours !== 12) hours += 12;
+                if (ampm === 'AM' && hours === 12) hours = 0;
+                
+                return { hours, minutes, ampm, hours12: parseInt(match[1]) };
+            }
+            
+            // Helper function to get times from the schedule display
+            function getScheduleTimes(day, isNormal) {
+                const times = [];
+                const scheduleId = day === 'today' 
+                    ? (isNormal ? 'normalDayScheduleToday' : 'workDayScheduleToday')
+                    : (isNormal ? 'normalDayScheduleTomorrow' : 'workDayScheduleTomorrow');
+                
+                const schedule = document.getElementById(scheduleId);
+                if (!schedule) return [];
+                
+                // Find all time containers in the schedule
+                const timeElements = schedule.querySelectorAll('.bg-\\[var\\(--tomorrow-accent-bg\\)\\] p, .bg-\\[var\\(--today-accent-bg\\)\\] p');
+                
+                timeElements.forEach(el => {
+                    const timeText = el.textContent.trim();
+                    if (timeText.includes(' - ')) {
+                        times.push(timeText);
+                    }
+                });
+                
+                return times;
+            }
+            
             function generateDiscordMessage() {
                 // Check if elements exist before using them
                 if (!useTimestampsToggle || !timestampFormatSelect || !discordTitleInput || !discordMessageOutput || !discordTemplateInput) {
@@ -1093,25 +1132,59 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
                 const announcementTitle = discordTitleInput.value;
                 const template = discordTemplateInput.value || defaultTemplate;
-
-                const todayTimes = isTodayNormal 
-                    ? useTimestamps
-                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 13, 0)}:${format}> to <t:${getTimestamp(today, 16, 0)}:${format}>\n- <t:${getTimestamp(today, 17, 0)}:${format}> to <t:${getTimestamp(today, 20, 0)}:${format}>\n- <t:${getTimestamp(today, 21, 0)}:${format}> to <t:${getTimestamp(tomorrow, 0, 0)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
-                    : useTimestamps
-                        ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 12, 30)}:${format}> to <t:${getTimestamp(today, 15, 30)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
-
+                
+                // Get actual times from the display
+                const todayScheduleTimes = getScheduleTimes('today', isTodayNormal);
+                const tomorrowScheduleTimes = getScheduleTimes('tomorrow', isTomorrowNormal);
+                
+                // Format today's times
+                let todayTimes = '';
+                if (useTimestamps) {
+                    todayScheduleTimes.forEach((timeRange, index) => {
+                        const [startStr, endStr] = timeRange.split(' - ');
+                        const startTime = parseTimeString(startStr);
+                        const endTime = parseTimeString(endStr);
+                        
+                        if (startTime && endTime) {
+                            // Check if end time is midnight (12:00 AM)
+                            const endDate = (endTime.hours === 0 && endTime.minutes === 0) ? tomorrow : today;
+                            
+                            if (index > 0) todayTimes += '\n';
+                            todayTimes += `- <t:${getTimestamp(today, startTime.hours, startTime.minutes)}:${format}> to <t:${getTimestamp(endDate, endTime.hours, endTime.minutes)}:${format}>`;
+                        }
+                    });
+                } else {
+                    todayScheduleTimes.forEach((timeRange, index) => {
+                        if (index > 0) todayTimes += '\n';
+                        todayTimes += `- ${timeRange}`;
+                    });
+                }
+                
+                // Format tomorrow's times
+                let tomorrowTimes = '';
                 const dayAfterTomorrow = new Date(tomorrow);
                 dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
                 
-                const tomorrowTimes = isTomorrowNormal
-                    ? useTimestamps
-                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${getTimestamp(dayAfterTomorrow, 0, 0)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
-                    : useTimestamps
-                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
-                        : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
+                if (useTimestamps) {
+                    tomorrowScheduleTimes.forEach((timeRange, index) => {
+                        const [startStr, endStr] = timeRange.split(' - ');
+                        const startTime = parseTimeString(startStr);
+                        const endTime = parseTimeString(endStr);
+                        
+                        if (startTime && endTime) {
+                            // Check if end time is midnight (12:00 AM)
+                            const endDate = (endTime.hours === 0 && endTime.minutes === 0) ? dayAfterTomorrow : tomorrow;
+                            
+                            if (index > 0) tomorrowTimes += '\n';
+                            tomorrowTimes += `- <t:${getTimestamp(tomorrow, startTime.hours, startTime.minutes)}:${format}> to <t:${getTimestamp(endDate, endTime.hours, endTime.minutes)}:${format}>`;
+                        }
+                    });
+                } else {
+                    tomorrowScheduleTimes.forEach((timeRange, index) => {
+                        if (index > 0) tomorrowTimes += '\n';
+                        tomorrowTimes += `- ${timeRange}`;
+                    });
+                }
                 
                 // Dynamic timezone text based on timestamp usage
                 // When timestamps are off, use the timezone text from the input field
@@ -1797,16 +1870,79 @@ I will be streaming on Twitch \`\`Today\`\` from:
             if (generateWeeklyBtn) {
                 generateWeeklyBtn.addEventListener('click', async () => {
                     try {
+                        // Show overlay for ZIP generation
+                        const overlay = document.getElementById('screenshotOverlay');
+                        const overlayTitle = document.getElementById('overlayTitle');
+                        const overlayMessage = document.getElementById('overlayMessage');
+                        
+                        if (overlay) {
+                            overlay.style.display = 'block';
+                            overlay.offsetHeight;
+                            overlay.style.opacity = '1';
+                            overlayTitle.textContent = 'Creating ZIP Archive';
+                            overlayMessage.textContent = 'Generating screenshots...';
+                            await sleep(350);
+                        }
+                        
                         generateWeeklyBtn.disabled = true;
-                        generateWeeklyBtn.textContent = 'Preparing...';
-                        await generateWeekImages({ pixelRatio: 3, download: true });
-                        generateWeeklyBtn.textContent = 'Done!';
+                        generateWeeklyBtn.textContent = 'Generating...';
+                        
+                        // Generate images without individual downloads
+                        const images = await generateWeekImages({ pixelRatio: 3, download: false });
+                        
+                        if (overlayMessage) {
+                            overlayMessage.textContent = 'Creating ZIP archive...';
+                        }
+                        
+                        // Create ZIP file
+                        if (!window.JSZip) throw new Error('JSZip not loaded');
+                        const zip = new JSZip();
+                        images.forEach(img => {
+                            const base64 = img.dataUrl.split(',')[1];
+                            zip.file(img.name, base64, { base64: true });
+                        });
+                        const blob = await zip.generateAsync({ type: 'blob' });
+                        
+                        // Download the ZIP
+                        if (window.saveAs) {
+                            window.saveAs(blob, `weekly_schedules_${ymd(new Date())}.zip`);
+                        } else {
+                            // Fallback: trigger download via object URL
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `weekly_schedules_${ymd(new Date())}.zip`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }
+                        
+                        // Hide overlay
+                        if (overlay) {
+                            overlayMessage.textContent = 'Complete!';
+                            await sleep(500);
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 300);
+                        }
+                        
+                        generateWeeklyBtn.textContent = 'Downloaded!';
                         setTimeout(() => {
                             generateWeeklyBtn.textContent = '📅 Generate Week Screenshots';
                             generateWeeklyBtn.disabled = false;
                         }, 1200);
                     } catch (e) {
                         console.error(e);
+                        
+                        // Hide overlay on error
+                        const overlay = document.getElementById('screenshotOverlay');
+                        if (overlay && overlay.style.display !== 'none') {
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 300);
+                        }
+                        
                         generateWeeklyBtn.textContent = 'Error - Try Again';
                         setTimeout(() => {
                             generateWeeklyBtn.textContent = '📅 Generate Week Screenshots';
@@ -1949,6 +2085,9 @@ I will be streaming on Twitch \`\`Today\`\` from:
 
             // Initial generation
             generateDiscordMessage();
+            
+            // Add global function to regenerate Discord message (for editor-slots.js to call)
+            window.regenerateDiscordMessage = generateDiscordMessage;
         });
     </script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>

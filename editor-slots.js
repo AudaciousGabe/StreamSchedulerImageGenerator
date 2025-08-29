@@ -293,6 +293,11 @@ class EditorSlotManager {
             const timeP = timeContainer.querySelector('p');
             if (timeP) timeP.textContent = slot.time;
         }
+        
+        // Regenerate Discord message with new times
+        if (typeof window.regenerateDiscordMessage === 'function') {
+            window.regenerateDiscordMessage();
+        }
     }
     
     updateDisplayForSlotKey(slotKey) {
@@ -337,6 +342,11 @@ class EditorSlotManager {
             
             container.appendChild(slotDiv);
         });
+        
+        // Regenerate Discord message with new times
+        if (typeof window.regenerateDiscordMessage === 'function') {
+            window.regenerateDiscordMessage();
+        }
     }
     
     updateAllDisplays() {
@@ -568,6 +578,7 @@ class EditorSlotManager {
                 mark.addEventListener('click', () => {
                     time.h = i;
                     currentReadout.textContent = formatTime(time);
+                    renderHours(); // Re-render to show selection
                     setTimeout(() => renderMinutes(), 200);
                 });
                 clockBox.appendChild(mark);
@@ -584,6 +595,7 @@ class EditorSlotManager {
                 mark.addEventListener('click', () => {
                     time.m = v;
                     currentReadout.textContent = formatTime(time);
+                    renderMinutes(); // Re-render to show selection
                     applyBtn.style.background = accent;
                 });
                 clockBox.appendChild(mark);
