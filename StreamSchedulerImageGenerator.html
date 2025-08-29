@@ -1631,7 +1631,7 @@ I will be streaming on Twitch \`\`Today\`\` from:
             const weekThemeOrder = ['twilight','sunrise','forest','oceanic','cyberpunk','pastel','arctic'];
 
             function getWeekDates(startDate) {
-                return Array.from({ length: 7 }, (_, i) => {
+                return Array.from({ length: 8 }, (_, i) => {
                     const d = new Date(startDate);
                     d.setDate(startDate.getDate() + i);
                     d.setHours(0,0,0,0);
@@ -1658,13 +1658,16 @@ I will be streaming on Twitch \`\`Today\`\` from:
             function buildWeekCards() {
                 if (!weekDayCardsContainer) return;
                 weekDayCardsContainer.innerHTML = '';
+                
+                // Build cards for all 8 days
                 weekPlan.forEach((item, idx) => {
                     const card = document.createElement('div');
                     card.className = 'week-day-card';
-                    const label = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : item.date.toLocaleDateString('en-US', { weekday: 'long' });
+                    const label = idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : idx === 7 ? 'Day 8 (Reference)' : item.date.toLocaleDateString('en-US', { weekday: 'long' });
+                    
                     card.innerHTML = `
                         <div class="flex items-center justify-between mb-3">
-                            <span class="day-badge">${label}</span>
+                            <span class="day-badge" ${idx === 7 ? 'style="background-color: var(--tomorrow-bg); color: var(--tomorrow-text);"' : ''}>${label}</span>
                             <span class="text-sm text-[var(--text-muted)]">${formatShort(item.date)}</span>
                         </div>
                         <div class="flex items-center justify-between">
@@ -1676,12 +1679,23 @@ I will be streaming on Twitch \`\`Today\`\` from:
                             <span class="text-sm font-medium text-[var(--text-secondary)]">Work</span>
                         </div>
                     `;
+                    
                     weekDayCardsContainer.appendChild(card);
                     const toggle = card.querySelector(`#weekToggle-${idx}`);
                     toggle.addEventListener('change', () => {
                         weekPlan[idx].isWork = toggle.checked;
                     });
                 });
+                
+                // Add the 9th slot for the Day 8 explanation
+                const noteCard = document.createElement('div');
+                noteCard.className = 'flex items-center justify-center p-4';
+                noteCard.innerHTML = `
+                    <p class="text-xs text-[var(--text-muted)] text-center italic">
+                        Day 8 is used as tomorrow's<br>reference for Day 7's image
+                    </p>
+                `;
+                weekDayCardsContainer.appendChild(noteCard);
             }
             buildWeekCards();
 
@@ -1771,14 +1785,14 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 return dataUrl;
             }
 
-            async function generateWeekImages(options = { pixelRatio: 3, download: true }) {
-                const { pixelRatio, download } = options;
+            async function generateWeekImages(options = { pixelRatio: 3 }) {
+                const { pixelRatio } = options;
                 // Show overlay to prevent flashing
                 const overlay = document.getElementById('screenshotOverlay');
                 const overlayTitle = document.getElementById('overlayTitle');
                 const overlayMessage = document.getElementById('overlayMessage');
                 
-                if (download && overlay) {
+                if (overlay) {
                     overlay.style.display = 'block';
                     // Force reflow to ensure display:block is applied before opacity transition
                     overlay.offsetHeight;
@@ -1800,44 +1814,52 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 const themeMatch = originalBodyClass.match(/theme-(\w+)/);
                 const originalTheme = themeMatch ? themeMatch[1] : 'twilight'
 
-                // Force Today Only scope
-                if (panelScopeToggle.checked) {
-                    panelScopeToggle.checked = false;
-                    panelScopeToggle.dispatchEvent(new Event('change'));
-                }
+                // Don't force Today Only scope - respect user's current setting
+                // This allows the weekly planner to honor the Export Scope toggle
 
                 const results = [];
-                for (let i = 0; i < weekPlan.length; i++) {
+                // Store original tomorrow schedule state
+                const originalTomorrowIsWork = !scheduleControls.tomorrow.workSchedule.classList.contains('hidden');
+                
+                // Generate images for first 7 days only
+                for (let i = 0; i < 7; i++) {
                     const { date, isWork } = weekPlan[i];
                     const theme = weekThemeOrder[i % weekThemeOrder.length];
                     
-                    // Update overlay progress for both download and preview
+                    // Update overlay progress
                     if (overlayMessage && overlay && overlay.style.display !== 'none') {
                         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
                         overlayMessage.textContent = `Processing ${dayName} (${i+1}/7)`;
                     }
 
-                    // Apply theme and schedule
+                    // Apply theme and schedule for today
                     setTheme(theme);
                     setTodaySchedule(isWork);
                     setTodayHeaderForDate(date);
+                    
+                    // Set up tomorrow's schedule for all days (using the next day's settings)
+                    // Only if we're in Full Schedule mode (panel scope is checked)
+                    if (panelScopeToggle.checked && i < weekPlan.length - 1) {
+                        const nextDay = weekPlan[i + 1];
+                        
+                        // Set tomorrow's schedule type based on next day
+                        if (nextDay.isWork) {
+                            scheduleControls.tomorrow.workBtn.click();
+                        } else {
+                            scheduleControls.tomorrow.normalBtn.click();
+                        }
+                        
+                        // Set tomorrow's title to show next day's date
+                        const nextDayName = nextDay.date.toLocaleDateString('en-US', { weekday: 'long' });
+                        const nextDayMD = nextDay.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        tomorrowTitleEl.innerHTML = `Tomorrow's Stream &bull; ${nextDayMD}`;
+                    }
 
                     // Capture
                     const dataUrl = await captureCurrentPanel(pixelRatio);
                     const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
                     const fileName = `schedule_${ymd(date)}_${dayName.toLowerCase()}_${theme}_${isWork ? 'work' : 'normal'}.png`;
                     results.push({ name: fileName, dataUrl });
-
-                    if (download) {
-                        const link = document.createElement('a');
-                        link.download = fileName;
-                        link.href = dataUrl;
-                        link.click();
-                        await sleep(150); // small delay between downloads
-                    }
-                    if (generateWeeklyBtn && !download) {
-                        generateWeeklyBtn.textContent = `Generating... (${i+1}/7)`;
-                    }
                 }
 
                 // Restore state
@@ -1845,6 +1867,14 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 tomorrowTitleEl.innerHTML = originalTomorrowTitle;
                 document.body.className = originalBodyClass;
                 setTodaySchedule(originalIsWork);
+                
+                // Restore tomorrow's schedule state
+                if (originalTomorrowIsWork) {
+                    scheduleControls.tomorrow.workBtn.click();
+                } else {
+                    scheduleControls.tomorrow.normalBtn.click();
+                }
+                
                 if (panelScopeToggle.checked !== originalPanelScopeChecked) {
                     panelScopeToggle.checked = originalPanelScopeChecked;
                     panelScopeToggle.dispatchEvent(new Event('change'));
@@ -1855,7 +1885,7 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 updateGlowEffects(); // Restore glow effects for the original theme
                 
                 // Hide overlay with fade out
-                if (download && overlay) {
+                if (overlay) {
                     overlayMessage.textContent = 'Complete!';
                     await sleep(500);
                     overlay.style.opacity = '0';
@@ -1870,31 +1900,19 @@ I will be streaming on Twitch \`\`Today\`\` from:
             if (generateWeeklyBtn) {
                 generateWeeklyBtn.addEventListener('click', async () => {
                     try {
-                        // Show overlay for ZIP generation
-                        const overlay = document.getElementById('screenshotOverlay');
-                        const overlayTitle = document.getElementById('overlayTitle');
-                        const overlayMessage = document.getElementById('overlayMessage');
-                        
-                        if (overlay) {
-                            overlay.style.display = 'block';
-                            overlay.offsetHeight;
-                            overlay.style.opacity = '1';
-                            overlayTitle.textContent = 'Creating ZIP Archive';
-                            overlayMessage.textContent = 'Generating screenshots...';
-                            await sleep(350);
-                        }
-                        
                         generateWeeklyBtn.disabled = true;
                         generateWeeklyBtn.textContent = 'Generating...';
                         
-                        // Generate images without individual downloads
-                        const images = await generateWeekImages({ pixelRatio: 3, download: false });
+                        // Generate images (overlay handled inside)
+                        const images = await generateWeekImages({ pixelRatio: 3 });
                         
+                        // Update overlay for ZIP creation
+                        const overlayMessage = document.getElementById('overlayMessage');
                         if (overlayMessage) {
                             overlayMessage.textContent = 'Creating ZIP archive...';
                         }
                         
-                        // Create ZIP file
+                        // Create and download ZIP
                         if (!window.JSZip) throw new Error('JSZip not loaded');
                         const zip = new JSZip();
                         images.forEach(img => {
@@ -1903,27 +1921,15 @@ I will be streaming on Twitch \`\`Today\`\` from:
                         });
                         const blob = await zip.generateAsync({ type: 'blob' });
                         
-                        // Download the ZIP
                         if (window.saveAs) {
                             window.saveAs(blob, `weekly_schedules_${ymd(new Date())}.zip`);
                         } else {
-                            // Fallback: trigger download via object URL
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
                             a.download = `weekly_schedules_${ymd(new Date())}.zip`;
                             a.click();
                             URL.revokeObjectURL(url);
-                        }
-                        
-                        // Hide overlay
-                        if (overlay) {
-                            overlayMessage.textContent = 'Complete!';
-                            await sleep(500);
-                            overlay.style.opacity = '0';
-                            setTimeout(() => {
-                                overlay.style.display = 'none';
-                            }, 300);
                         }
                         
                         generateWeeklyBtn.textContent = 'Downloaded!';
@@ -1933,16 +1939,6 @@ I will be streaming on Twitch \`\`Today\`\` from:
                         }, 1200);
                     } catch (e) {
                         console.error(e);
-                        
-                        // Hide overlay on error
-                        const overlay = document.getElementById('screenshotOverlay');
-                        if (overlay && overlay.style.display !== 'none') {
-                            overlay.style.opacity = '0';
-                            setTimeout(() => {
-                                overlay.style.display = 'none';
-                            }, 300);
-                        }
-                        
                         generateWeeklyBtn.textContent = 'Error - Try Again';
                         setTimeout(() => {
                             generateWeeklyBtn.textContent = '📅 Generate Week Screenshots';
@@ -1971,7 +1967,7 @@ I will be streaming on Twitch \`\`Today\`\` from:
                         
                         previewWeeklyBtn.disabled = true;
                         previewWeeklyBtn.textContent = 'Generating Previews...';
-                        const images = await generateWeekImages({ pixelRatio: 1.5, download: false });
+                        const images = await generateWeekImages({ pixelRatio: 1.5 });
                         weeklyPreviewContainer.innerHTML = '';
                         images.forEach((img, i) => {
                             const wrap = document.createElement('div');
@@ -2039,7 +2035,7 @@ I will be streaming on Twitch \`\`Today\`\` from:
                         
                         downloadAllWeeklyBtn.disabled = true;
                         downloadAllWeeklyBtn.textContent = 'Zipping...';
-                        const images = await generateWeekImages({ pixelRatio: 3, download: false });
+                        const images = await generateWeekImages({ pixelRatio: 3 });
                         if (overlayMessage) {
                             overlayMessage.textContent = 'Creating ZIP archive...';
                         }
