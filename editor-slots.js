@@ -100,7 +100,7 @@ class EditorSlotManager {
         // Create slot inputs
         this.slots[slotKey].forEach((slot, index) => {
             const slotDiv = document.createElement('div');
-            slotDiv.className = 'slot-editor-row flex items-center gap-2 mb-3';
+            slotDiv.className = 'slot-editor-row flex items-center gap-2 mb-2';
             
             // Parse time to get start and end times
             let startTime = '9:30 AM';
