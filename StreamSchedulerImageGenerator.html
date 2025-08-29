@@ -801,6 +801,26 @@
                     </div>
                     <emoji-picker id="emojiPicker" theme="dark"></emoji-picker>
                 </div>
+                
+                <!-- Message Template Editor -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="discordTemplateInput" class="block text-sm font-medium text-[var(--text-secondary)]">Message Template</label>
+                        <button id="resetTemplateBtn" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">Reset to Default</button>
+                    </div>
+                    <textarea id="discordTemplateInput" class="editor-input w-full h-48 rounded-md p-2 resize-none font-mono text-sm" placeholder="Use placeholders: [title], [today], [tomorrow], [link], [timezone]"></textarea>
+                    <div class="mt-2 text-xs text-[var(--text-muted)]">
+                        <div class="font-semibold mb-1">Available placeholders:</div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <span><code class="bg-[var(--input-bg)] px-1 rounded">[title]</code> - Your announcement title</span>
+                            <span><code class="bg-[var(--input-bg)] px-1 rounded">[today]</code> - Today's schedule times</span>
+                            <span><code class="bg-[var(--input-bg)] px-1 rounded">[tomorrow]</code> - Tomorrow's schedule times</span>
+                            <span><code class="bg-[var(--input-bg)] px-1 rounded">[link]</code> - Your Twitch channel link</span>
+                            <span><code class="bg-[var(--input-bg)] px-1 rounded">[timezone]</code> - Dynamic timezone note</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Timestamp Format</label>
@@ -825,7 +845,10 @@
                         </div>
                     </div>
                 </div>
-                <textarea id="discordMessageOutput" readonly class="editor-input w-full h-64 rounded-md p-2 resize-none"></textarea>
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Preview</label>
+                    <textarea id="discordMessageOutput" readonly class="editor-input w-full h-64 rounded-md p-2 resize-none"></textarea>
+                </div>
                     <button id="copyMessageBtn" class="schedule-btn active mt-4 w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Copy Message</button>
                 </div>
 
@@ -1027,6 +1050,28 @@
             const useTimestampsToggle = document.getElementById('useTimestampsToggle');
             const timestampFormatSelect = document.getElementById('timestampFormat');
             const discordTitleInput = document.getElementById('discordTitleInput');
+            const discordTemplateInput = document.getElementById('discordTemplateInput');
+            const resetTemplateBtn = document.getElementById('resetTemplateBtn');
+            
+            // Default Discord message template
+            const defaultTemplate = `@Twitch Enjoyers : [title]
+
+I will be streaming on Twitch \`\`Today\`\` from:
+
+[today]
+
+\`\`Tomorrow\`\` I'll be streaming from:
+
+[tomorrow]
+
+[timezone]
+
+[link]`;
+            
+            // Initialize template with default if empty
+            if (discordTemplateInput) {
+                discordTemplateInput.value = defaultTemplate;
+            }
             
             // --- Discord Message Generator Functions ---
             function getTimestamp(date, hours, minutes) {
@@ -1037,7 +1082,7 @@
 
             function generateDiscordMessage() {
                 // Check if elements exist before using them
-                if (!useTimestampsToggle || !timestampFormatSelect || !discordTitleInput || !discordMessageOutput) {
+                if (!useTimestampsToggle || !timestampFormatSelect || !discordTitleInput || !discordMessageOutput || !discordTemplateInput) {
                     console.warn('Discord message generator elements not ready');
                     return;
                 }
@@ -1047,6 +1092,7 @@
                 const isTodayNormal = !scheduleControls.today.normalSchedule.classList.contains('hidden');
                 const isTomorrowNormal = !scheduleControls.tomorrow.normalSchedule.classList.contains('hidden');
                 const announcementTitle = discordTitleInput.value;
+                const template = discordTemplateInput.value || defaultTemplate;
 
                 const todayTimes = isTodayNormal 
                     ? useTimestamps
@@ -1067,11 +1113,24 @@
                         ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
                         : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
                 
-                const footerText = useTimestamps
+                // Dynamic timezone text based on timestamp usage
+                // When timestamps are off, use the timezone text from the input field
+                const timezoneTextInput = document.getElementById('timezoneTextInput');
+                const timezoneInputValue = timezoneTextInput ? timezoneTextInput.value : 'All times are in EST';
+                const timezoneText = useTimestamps
                     ? `\`\`Times auto-adjust to your timezone!\`\``
-                    : `\`\`All EST!\`\``;
-
-                const message = `@Twitch Enjoyers : ${announcementTitle}\n\nI will be streaming on Twitch \`\`Today\`\` from:\n\n${todayTimes}\n\n\`\`Tomorrow\`\` I'll be streaming from:\n\n${tomorrowTimes}\n\n${footerText}\n\nhttps://www.twitch.tv/audaciousgabe`;
+                    : `\`\`${timezoneInputValue}\`\``;
+                
+                // Get the Twitch link from the input
+                const twitchLink = twitchLinkInput ? twitchLinkInput.value : 'https://www.twitch.tv/audaciousgabe';
+                
+                // Replace placeholders in template
+                let message = template
+                    .replace(/\[title\]/g, announcementTitle)
+                    .replace(/\[today\]/g, todayTimes)
+                    .replace(/\[tomorrow\]/g, tomorrowTimes)
+                    .replace(/\[timezone\]/g, timezoneText)
+                    .replace(/\[link\]/g, twitchLink);
 
                 discordMessageOutput.value = message;
             }
@@ -1340,6 +1399,15 @@
             }
             if (discordTitleInput) {
                 discordTitleInput.addEventListener('input', generateDiscordMessage);
+            }
+            if (discordTemplateInput) {
+                discordTemplateInput.addEventListener('input', generateDiscordMessage);
+            }
+            if (resetTemplateBtn) {
+                resetTemplateBtn.addEventListener('click', () => {
+                    discordTemplateInput.value = defaultTemplate;
+                    generateDiscordMessage();
+                });
             }
 
             copyMessageBtn.addEventListener('click', () => {
