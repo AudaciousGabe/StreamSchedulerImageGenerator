@@ -85,6 +85,47 @@ class StreamSchedulerManager:
             messagebox.showerror("Error", f"Failed to open HTML: {e}")
             return False
     
+    def switch_tab(self, tab_name, today_btn, tomorrow_btn, today_frame, tomorrow_frame, accent_color, button_bg):
+        """Switch between Today and Tomorrow editor tabs."""
+        self.active_tab.set(tab_name)
+        if tab_name == "today":
+            today_btn.config(bg=accent_color)
+            tomorrow_btn.config(bg=button_bg)
+            today_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+            tomorrow_frame.pack_forget()
+        else:
+            today_btn.config(bg=button_bg)
+            tomorrow_btn.config(bg=accent_color)
+            tomorrow_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+            today_frame.pack_forget()
+    
+    def copy_discord_message(self):
+        """Copy the Discord message to clipboard."""
+        try:
+            message = self.discord_output.get("1.0", tk.END).strip()
+            if message:
+                self.root.clipboard_clear()
+                self.root.clipboard_append(message)
+                messagebox.showinfo("Success", "Message copied to clipboard!")
+            else:
+                messagebox.showwarning("Warning", "No message to copy!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to copy message: {e}")
+    
+    def export_schedule(self):
+        """Export the schedule as PNG (opens HTML for manual export)."""
+        # For now, just open the HTML file since screenshot functionality 
+        # would require additional libraries like selenium or pyautogui
+        messagebox.showinfo(
+            "Export Schedule", 
+            "The schedule generator will open in your browser.\n\n"
+            "To export as PNG:\n"
+            "1. Right-click on the schedule\n"
+            "2. Select 'Save image as...' or use browser's screenshot tool\n"
+            "3. Save the image to your desired location"
+        )
+        self.open_html()
+    
     def create_gui(self):
         """Create the Tkinter GUI."""
         self.root = tk.Tk()
