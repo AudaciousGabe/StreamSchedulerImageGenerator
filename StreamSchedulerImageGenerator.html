@@ -323,10 +323,10 @@
                 <!-- Header/Title -->
                 <header class="text-center mb-10">
                     <div class="bg-[var(--bg-secondary)] backdrop-blur-sm rounded-xl py-8 px-4 border border-[var(--border-primary)]">
-                        <h1 class="text-5xl sm:text-6xl font-extrabold tracking-tight gradient-text">
+                        <h1 id="channelNameDisplay" class="text-5xl sm:text-6xl font-extrabold tracking-tight gradient-text">
                             Audacious Gabe
                         </h1>
-                        <a href="https://www.twitch.tv/audaciousgabe" class="text-[var(--today-header)] hover:opacity-80 transition-opacity mt-3 text-lg inline-block">
+                        <a id="twitchLinkDisplay" href="https://www.twitch.tv/audaciousgabe" class="text-[var(--today-header)] hover:opacity-80 transition-opacity mt-3 text-lg inline-block">
                             twitch.tv/audaciousgabe
                         </a>
                     </div>
@@ -482,7 +482,7 @@
                     </div>
                     <!-- Footer -->
                     <footer class="text-center mt-12">
-                        <p class="text-[var(--text-muted)]">All times are in EST</p>
+                        <p id="timezoneTextDisplay" class="text-[var(--text-muted)]">All times are in EST</p>
                     </footer>
                 </div>
             </div>
@@ -542,7 +542,23 @@
 
             <!-- Content Editor -->
             <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Content Editor</h3>
+                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Editor</h3>
+                
+                <!-- Global Settings -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold mb-4 text-[var(--text-secondary)]">Global Settings</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Channel Name</label>
+                            <input type="text" id="channelNameInput" class="editor-input w-full rounded-md p-2" value="Audacious Gabe">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Twitch Channel Link</label>
+                            <input type="text" id="twitchLinkInput" class="editor-input w-full rounded-md p-2" value="https://www.twitch.tv/audaciousgabe">
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Editor Tabs -->
                 <div class="flex justify-center border-b border-[var(--border-primary)] mb-6">
                     <button id="editTodayTab" class="editor-tab active py-2 px-6 font-semibold rounded-t-lg">Edit Today</button>
@@ -610,6 +626,14 @@
                             <input type="text" id="tomorrowWorkSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
                             <input type="text" id="tomorrowWorkSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
                         </div>
+                    </div>
+                </div>
+                
+                <!-- Timezone Setting (at bottom to match layout) -->
+                <div class="mt-6 pt-6 border-t border-[var(--border-primary)]">
+                    <div>
+                        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Timezone Text</label>
+                        <input type="text" id="timezoneTextInput" class="editor-input w-full rounded-md p-2" value="All times are in EST">
                     </div>
                 </div>
             </div>
@@ -928,6 +952,37 @@
             }
 
             bindings.forEach(setupBinding);
+
+            // --- Global Settings Binding ---
+            const channelNameInput = document.getElementById('channelNameInput');
+            const channelNameDisplay = document.getElementById('channelNameDisplay');
+            const twitchLinkInput = document.getElementById('twitchLinkInput');
+            const twitchLinkDisplay = document.getElementById('twitchLinkDisplay');
+            const timezoneTextInput = document.getElementById('timezoneTextInput');
+            const timezoneTextDisplay = document.getElementById('timezoneTextDisplay');
+            
+            // Channel name binding
+            channelNameInput.addEventListener('input', () => {
+                channelNameDisplay.textContent = channelNameInput.value;
+            });
+            
+            // Twitch link binding
+            twitchLinkInput.addEventListener('input', () => {
+                const url = twitchLinkInput.value;
+                twitchLinkDisplay.href = url;
+                // Extract username from URL for display text
+                const match = url.match(/twitch\.tv\/([^/?]+)/);
+                if (match) {
+                    twitchLinkDisplay.textContent = `twitch.tv/${match[1]}`;
+                } else {
+                    twitchLinkDisplay.textContent = url;
+                }
+            });
+            
+            // Timezone text binding
+            timezoneTextInput.addEventListener('input', () => {
+                timezoneTextDisplay.textContent = timezoneTextInput.value;
+            });
 
             // --- Layout Padding Controls ---
             const outerPaddingContainer = document.getElementById('outerPaddingContainer');
