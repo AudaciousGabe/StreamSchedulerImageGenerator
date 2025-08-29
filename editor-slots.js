@@ -101,13 +101,30 @@ class EditorSlotManager {
         this.slots[slotKey].forEach((slot, index) => {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'slot-editor-row flex items-center gap-2 mb-3';
+            
+            // Parse time to get start and end times
+            let startTime = '9:30 AM';
+            let endTime = '12:30 PM';
+            const timeMatch = slot.time.match(/(\d{1,2}:\d{2} (?:AM|PM)) - (\d{1,2}:\d{2} (?:AM|PM))/);
+            if (timeMatch) {
+                startTime = timeMatch[1];
+                endTime = timeMatch[2];
+            }
+            
             slotDiv.innerHTML = `
-                <div class="relative">
+                <div class="flex gap-2 items-center">
                     <input type="text" 
-                           id="${slotKey}Slot${index + 1}TimeInput" 
-                           placeholder="Time" 
-                           class="editor-input rounded p-2 w-44 cursor-pointer font-semibold" 
-                           value="${slot.time}"
+                           id="${slotKey}Slot${index + 1}StartTimeInput" 
+                           placeholder="Start" 
+                           class="editor-input rounded p-2 w-24 cursor-pointer font-semibold text-center" 
+                           value="${startTime}"
+                           readonly>
+                    <span class="text-[var(--text-muted)] font-medium">–</span>
+                    <input type="text" 
+                           id="${slotKey}Slot${index + 1}EndTimeInput" 
+                           placeholder="End" 
+                           class="editor-input rounded p-2 w-24 cursor-pointer font-semibold text-center" 
+                           value="${endTime}"
                            readonly>
                 </div>
                 <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -135,7 +152,8 @@ class EditorSlotManager {
             // Add event listeners for inputs
             const titleInput = slotDiv.querySelector(`#${slotKey}Slot${index + 1}TitleInput`);
             const descInput = slotDiv.querySelector(`#${slotKey}Slot${index + 1}DescInput`);
-            const timeInput = slotDiv.querySelector(`#${slotKey}Slot${index + 1}TimeInput`);
+            const startTimeInput = slotDiv.querySelector(`#${slotKey}Slot${index + 1}StartTimeInput`);
+            const endTimeInput = slotDiv.querySelector(`#${slotKey}Slot${index + 1}EndTimeInput`);
             
             titleInput.addEventListener('input', (e) => {
                 this.slots[slotKey][index].title = e.target.value;
@@ -149,9 +167,13 @@ class EditorSlotManager {
                 this.saveSlots();
             });
             
-            // Add click handler for time picker
-            timeInput.addEventListener('click', (e) => {
-                this.showTimePicker(e.target, slotKey, index);
+            // Add click handlers for time pickers
+            startTimeInput.addEventListener('click', (e) => {
+                this.showSingleTimePicker(e.target, slotKey, index, 'start');
+            });
+            
+            endTimeInput.addEventListener('click', (e) => {
+                this.showSingleTimePicker(e.target, slotKey, index, 'end');
             });
         });
         
@@ -321,6 +343,294 @@ class EditorSlotManager {
         Object.keys(this.slots).forEach(slotKey => {
             this.updateDisplayForSlotKey(slotKey);
         });
+    }
+    
+    showSingleTimePicker(inputElement, slotKey, slotIndex, timeType) {
+        // Remove any existing picker overlay
+        const existing = document.getElementById('mdTimePicker');
+        if (existing) existing.remove();
+
+        // Theme colors
+        const cs = getComputedStyle(document.body);
+        const bg = cs.getPropertyValue('--bg-primary').trim() || '#111827';
+        const border = cs.getPropertyValue('--border-primary').trim() || 'rgba(55, 65, 81, 0.5)';
+        const text = cs.getPropertyValue('--text-primary').trim() || '#f9fafb';
+        const textSecondary = cs.getPropertyValue('--text-secondary').trim() || '#d1d5db';
+        const accent = cs.getPropertyValue('--btn-active-bg').trim() || '#9333ea';
+        const inputBg = cs.getPropertyValue('--input-bg').trim() || '#374151';
+
+        // Parse current time
+        const currentTimeValue = inputElement.value;
+        const match = currentTimeValue.match(/(\d{1,2}):(\d{2}) (AM|PM)/);
+        let time = { h: 9, m: 30, a: 'AM' };
+        if (match) {
+            time.h = parseInt(match[1]);
+            time.m = parseInt(match[2]);
+            time.a = match[3];
+        }
+
+        let mode = 'hour'; // 'hour' | 'minute'
+        const formatTime = (t) => `${t.h}:${t.m.toString().padStart(2,'0')} ${t.a}`;
+
+        // Build overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'mdTimePicker';
+        overlay.setAttribute('role', 'dialog');
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = '1000';
+        overlay.style.background = 'transparent';
+
+        const card = document.createElement('div');
+        card.style.width = '320px';
+        card.style.maxWidth = '90vw';
+        card.style.background = bg;
+        card.style.border = `1px solid ${border}`;
+        card.style.borderRadius = '16px';
+        card.style.boxShadow = '0 20px 40px rgba(0,0,0,0.5)';
+        card.style.padding = '16px';
+        card.style.color = text;
+        card.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
+
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'space-between';
+        header.style.marginBottom = '8px';
+
+        const title = document.createElement('div');
+        title.style.fontSize = '14px';
+        title.style.fontWeight = '600';
+        title.style.color = textSecondary;
+        title.textContent = timeType === 'start' ? 'Select start time' : 'Select end time';
+
+        const ampmWrap = document.createElement('div');
+        ampmWrap.style.display = 'flex';
+        ampmWrap.style.gap = '8px';
+
+        const amBtn = document.createElement('button');
+        const pmBtn = document.createElement('button');
+        const styleAmPmBtn = (btn, active) => {
+            btn.style.padding = '6px 10px';
+            btn.style.borderRadius = '9999px';
+            btn.style.border = `1px solid ${border}`;
+            btn.style.background = active ? accent : inputBg;
+            btn.style.color = active ? '#ffffff' : text;
+            btn.style.fontWeight = '600';
+            btn.style.cursor = 'pointer';
+        };
+        amBtn.textContent = 'AM';
+        pmBtn.textContent = 'PM';
+
+        const syncAmPm = () => {
+            styleAmPmBtn(amBtn, time.a === 'AM');
+            styleAmPmBtn(pmBtn, time.a === 'PM');
+            currentReadout.textContent = formatTime(time);
+        };
+
+        amBtn.addEventListener('click', () => {
+            time.a = 'AM';
+            syncAmPm();
+        });
+        pmBtn.addEventListener('click', () => {
+            time.a = 'PM';
+            syncAmPm();
+        });
+
+        ampmWrap.appendChild(amBtn);
+        ampmWrap.appendChild(pmBtn);
+        header.appendChild(title);
+        header.appendChild(ampmWrap);
+
+        // Time readout
+        const currentReadout = document.createElement('div');
+        currentReadout.style.fontSize = '32px';
+        currentReadout.style.fontWeight = '800';
+        currentReadout.style.textAlign = 'center';
+        currentReadout.style.margin = '12px 0';
+        currentReadout.style.color = text;
+        currentReadout.textContent = formatTime(time);
+
+        // Clock container
+        const clockBox = document.createElement('div');
+        clockBox.style.position = 'relative';
+        clockBox.style.width = '280px';
+        clockBox.style.height = '280px';
+        clockBox.style.margin = '0 auto';
+        clockBox.style.borderRadius = '9999px';
+        clockBox.style.background = inputBg;
+        clockBox.style.border = `1px solid ${border}`;
+
+        const centerDot = document.createElement('div');
+        centerDot.style.position = 'absolute';
+        centerDot.style.width = '8px';
+        centerDot.style.height = '8px';
+        centerDot.style.borderRadius = '9999px';
+        centerDot.style.left = '50%';
+        centerDot.style.top = '50%';
+        centerDot.style.transform = 'translate(-50%, -50%)';
+        centerDot.style.background = accent;
+        clockBox.appendChild(centerDot);
+
+        // Footer
+        const footer = document.createElement('div');
+        footer.style.display = 'flex';
+        footer.style.gap = '8px';
+        footer.style.marginTop = '16px';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.flex = '1';
+        cancelBtn.style.padding = '10px';
+        cancelBtn.style.borderRadius = '8px';
+        cancelBtn.style.border = `1px solid ${border}`;
+        cancelBtn.style.background = inputBg;
+        cancelBtn.style.color = text;
+        cancelBtn.style.fontWeight = '600';
+        cancelBtn.style.cursor = 'pointer';
+
+        const applyBtn = document.createElement('button');
+        applyBtn.textContent = 'Apply';
+        applyBtn.style.flex = '1';
+        applyBtn.style.padding = '10px';
+        applyBtn.style.borderRadius = '8px';
+        applyBtn.style.background = accent;
+        applyBtn.style.color = '#ffffff';
+        applyBtn.style.fontWeight = '700';
+        applyBtn.style.cursor = 'pointer';
+
+        footer.appendChild(cancelBtn);
+        footer.appendChild(applyBtn);
+
+        card.appendChild(header);
+        card.appendChild(currentReadout);
+        card.appendChild(clockBox);
+        card.appendChild(footer);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        // Clock rendering helpers
+        const clearMarks = () => {
+            [...clockBox.querySelectorAll('.time-mark')].forEach(n => n.remove());
+        };
+
+        const createMark = (label, angle, selected) => {
+            const r = 110;
+            const cx = 140, cy = 140;
+            const rad = (angle - 90) * Math.PI / 180;
+            const x = cx + r * Math.cos(rad);
+            const y = cy + r * Math.sin(rad);
+            
+            const el = document.createElement('div');
+            el.className = 'time-mark';
+            el.textContent = label;
+            el.style.position = 'absolute';
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.transform = 'translate(-50%, -50%)';
+            el.style.width = '40px';
+            el.style.height = '40px';
+            el.style.lineHeight = '40px';
+            el.style.textAlign = 'center';
+            el.style.borderRadius = '9999px';
+            el.style.cursor = 'pointer';
+            el.style.fontWeight = '600';
+            el.style.fontSize = '14px';
+            el.style.background = selected ? accent : bg;
+            el.style.border = `1px solid ${border}`;
+            el.style.color = selected ? '#ffffff' : text;
+            el.style.transition = 'all 0.2s';
+            
+            el.addEventListener('mouseenter', () => {
+                if (!selected) {
+                    el.style.background = inputBg;
+                    el.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                }
+            });
+            el.addEventListener('mouseleave', () => {
+                if (!selected) {
+                    el.style.background = bg;
+                    el.style.transform = 'translate(-50%, -50%) scale(1)';
+                }
+            });
+            
+            return el;
+        };
+
+        const renderHours = () => {
+            clearMarks();
+            for (let i = 1; i <= 12; i++) {
+                const angle = i * 30;
+                const mark = createMark(String(i), angle, time.h === i);
+                mark.addEventListener('click', () => {
+                    time.h = i;
+                    currentReadout.textContent = formatTime(time);
+                    setTimeout(() => renderMinutes(), 200);
+                });
+                clockBox.appendChild(mark);
+            }
+        };
+
+        const renderMinutes = () => {
+            clearMarks();
+            const values = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+            values.forEach((v, idx) => {
+                const angle = idx * 30;
+                const label = v.toString().padStart(2, '0');
+                const mark = createMark(label, angle, time.m === v);
+                mark.addEventListener('click', () => {
+                    time.m = v;
+                    currentReadout.textContent = formatTime(time);
+                    applyBtn.style.background = accent;
+                });
+                clockBox.appendChild(mark);
+            });
+        };
+
+        // Button handlers
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        
+        applyBtn.addEventListener('click', () => {
+            const newTime = formatTime(time);
+            inputElement.value = newTime;
+            
+            // Update the full time string in the slot
+            const startInput = inputElement.parentElement.querySelector(`[id$="StartTimeInput"]`);
+            const endInput = inputElement.parentElement.querySelector(`[id$="EndTimeInput"]`);
+            
+            const startTime = startInput ? startInput.value : '9:30 AM';
+            const endTime = endInput ? endInput.value : '12:30 PM';
+            
+            const fullTime = timeType === 'start' 
+                ? `${newTime} - ${endTime}`
+                : `${startTime} - ${newTime}`;
+            
+            this.slots[slotKey][slotIndex].time = fullTime;
+            this.updateDisplay(slotKey, slotIndex);
+            this.saveSlots();
+            overlay.remove();
+        });
+
+        // Close on outside click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        // Close on ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        // Initial render
+        syncAmPm();
+        renderHours();
     }
     
     showTimePicker(inputElement, slotKey, slotIndex) {
