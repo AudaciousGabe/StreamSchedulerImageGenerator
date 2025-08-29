@@ -41,8 +41,8 @@ class StreamSchedulerManager:
         # Default configuration
         return {
             "channel": {
-                "name": "AudaciousJr",
-                "link": "https://www.twitch.tv/audaciousjr"
+                "name": "Audacious Gabe",
+                "link": "https://www.twitch.tv/audaciousgabe"
             },
             "theme": "twilight",
             "timezone": "EST",
@@ -89,7 +89,7 @@ class StreamSchedulerManager:
         """Create the Tkinter GUI."""
         self.root = tk.Tk()
         self.root.title("Stream Scheduler Manager")
-        self.root.geometry("600x700")
+        self.root.geometry("880x700")
         
         # Configure styles
         style = ttk.Style()
@@ -424,9 +424,6 @@ class StreamSchedulerManager:
         
         # Create and run GUI
         self.create_gui()
-        
-        # Open HTML automatically
-        self.open_html()
         
         # Start GUI main loop
         self.root.mainloop()
