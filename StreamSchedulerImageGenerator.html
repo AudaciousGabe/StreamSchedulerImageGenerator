@@ -256,10 +256,13 @@
 
         /* Glowing Panel Style */
         .glowing-panel {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 var(--panel-glow-size, 30px) var(--panel-glow-color, rgba(255, 255, 255, 0.1)),
-                        inset 0 0 var(--panel-glow-size, 30px) var(--panel-glow-color, rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 var(--panel-glow-size, 40px) var(--panel-glow-color, rgba(255, 255, 255, 0.2)),
+                        0 0 calc(var(--panel-glow-size, 40px) * 1.5) var(--panel-glow-color, rgba(255, 255, 255, 0.15)),
+                        0 0 calc(var(--panel-glow-size, 40px) * 2) var(--panel-glow-color, rgba(255, 255, 255, 0.1)),
+                        inset 0 0 var(--panel-glow-size, 40px) var(--panel-glow-color, rgba(255, 255, 255, 0.08));
             transition: box-shadow 0.3s ease;
+            position: relative;
         }
 
         /* Emoji Picker */
@@ -734,15 +737,15 @@
                     <div>
                         <label for="panelGlowSize" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Panel Glow</label>
                         <div class="flex items-center gap-4">
-                            <input id="panelGlowSize" type="range" min="0" max="80" value="30" class="w-full">
-                            <span id="panelGlowSizeValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">30px</span>
+                            <input id="panelGlowSize" type="range" min="0" max="120" value="50" class="w-full">
+                            <span id="panelGlowSizeValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">50px</span>
                         </div>
                     </div>
                     <div>
                         <label for="glowIntensity" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Glow Intensity</label>
                         <div class="flex items-center gap-4">
-                            <input id="glowIntensity" type="range" min="0" max="100" value="30" class="w-full">
-                            <span id="glowIntensityValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">30%</span>
+                            <input id="glowIntensity" type="range" min="0" max="100" value="50" class="w-full">
+                            <span id="glowIntensityValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">50%</span>
                         </div>
                     </div>
                 </div>
@@ -1056,7 +1059,6 @@
             const panelGlowValue = document.getElementById('panelGlowSizeValue');
             const glowIntensitySlider = document.getElementById('glowIntensity');
             const glowIntensityValue = document.getElementById('glowIntensityValue');
-            const twitchLinkDisplay = document.getElementById('twitchLinkDisplay');
             
             function updateGlowEffects() {
                 const titleGlow = titleGlowSlider.value;
@@ -1072,8 +1074,18 @@
                 // Calculate glow color with intensity
                 const computedStyles = getComputedStyle(document.body);
                 const headerGlow = computedStyles.getPropertyValue('--header-glow').trim();
-                const panelGlowColor = `rgba(255, 255, 255, ${0.1 * intensity})`;
-                document.documentElement.style.setProperty('--panel-glow-color', panelGlowColor);
+                // Use theme's header glow color for panel, or fallback to white
+                const themeGlowColor = computedStyles.getPropertyValue('--header-gradient-start').trim();
+                
+                // Create a more vibrant glow using the theme color
+                if (themeGlowColor) {
+                    // Parse the color and create rgba version with intensity
+                    const panelGlowColor = `${themeGlowColor}`;
+                    document.documentElement.style.setProperty('--panel-glow-color', headerGlow || `rgba(255, 255, 255, ${0.25 * intensity})`);
+                } else {
+                    const panelGlowColor = `rgba(255, 255, 255, ${0.25 * intensity})`;
+                    document.documentElement.style.setProperty('--panel-glow-color', panelGlowColor);
+                }
                 
                 // Update link glow inline style
                 if (twitchLinkDisplay) {
@@ -1125,9 +1137,12 @@
                         ? `- <t:${getTimestamp(today, 9, 30)}:${format}> to <t:${getTimestamp(today, 12, 30)}:${format}>\n- <t:${getTimestamp(today, 12, 30)}:${format}> to <t:${getTimestamp(today, 15, 30)}:${format}>`
                         : `- 9:30 AM to 12:30 PM\n- 12:30 PM to 3:30 PM`;
 
+                const dayAfterTomorrow = new Date(tomorrow);
+                dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+                
                 const tomorrowTimes = isTomorrowNormal
                     ? useTimestamps
-                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${new Date(tomorrow).setDate(tomorrow.getDate()+1) && getTimestamp(tomorrow, 0, 0)}:${format}>`
+                        ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 13, 0)}:${format}> to <t:${getTimestamp(tomorrow, 16, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 17, 0)}:${format}> to <t:${getTimestamp(tomorrow, 20, 0)}:${format}>\n- <t:${getTimestamp(tomorrow, 21, 0)}:${format}> to <t:${getTimestamp(dayAfterTomorrow, 0, 0)}:${format}>`
                         : `- 9:30 AM to 12:30 PM\n- 1:00 PM to 4:00 PM\n- 5:00 PM to 8:00 PM\n- 9:00 PM to 12:00 AM`
                     : useTimestamps
                         ? `- <t:${getTimestamp(tomorrow, 9, 30)}:${format}> to <t:${getTimestamp(tomorrow, 12, 30)}:${format}>\n- <t:${getTimestamp(tomorrow, 12, 30)}:${format}> to <t:${getTimestamp(tomorrow, 15, 30)}:${format}>`
