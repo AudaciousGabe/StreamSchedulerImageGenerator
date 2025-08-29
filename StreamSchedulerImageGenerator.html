@@ -230,7 +230,12 @@
         }
 
         /* --- THEME-AWARE STYLES --- */
-    .gradient-text { color: var(--header-gradient-start); text-shadow: none; }
+    .gradient-text { 
+        color: var(--header-gradient-start); 
+        text-shadow: 0 0 var(--title-glow-size, 20px) var(--header-glow),
+                     0 0 var(--title-glow-size, 20px) var(--header-gradient-start);
+        transition: text-shadow 0.3s ease;
+    }
         .theme-btn.active { box-shadow: 0 0 0 3px var(--header-gradient-start); }
         
         .schedule-btn { background-color: var(--btn-inactive-bg); }
@@ -252,7 +257,9 @@
         /* Glowing Panel Style */
         .glowing-panel {
             border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: none;
+            box-shadow: 0 0 var(--panel-glow-size, 30px) var(--panel-glow-color, rgba(255, 255, 255, 0.1)),
+                        inset 0 0 var(--panel-glow-size, 30px) var(--panel-glow-color, rgba(255, 255, 255, 0.05));
+            transition: box-shadow 0.3s ease;
         }
 
         /* Emoji Picker */
@@ -326,7 +333,7 @@
                         <h1 id="channelNameDisplay" class="text-5xl sm:text-6xl font-extrabold tracking-tight gradient-text">
                             Audacious Gabe
                         </h1>
-                        <a id="twitchLinkDisplay" href="https://www.twitch.tv/audaciousgabe" class="text-[var(--today-header)] hover:opacity-80 transition-opacity mt-3 text-lg inline-block">
+                        <a id="twitchLinkDisplay" href="https://www.twitch.tv/audaciousgabe" class="text-[var(--today-header)] hover:opacity-80 transition-all mt-3 text-lg inline-block" style="text-shadow: 0 0 var(--link-glow-size, 15px) var(--today-header);">
                             twitch.tv/audaciousgabe
                         </a>
                     </div>
@@ -706,6 +713,38 @@
                             <span id="innerPaddingRightValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">32px</span>
                         </div>
                     </div>
+                    <!-- Glow Customization -->
+                    <div class="md:col-span-2 pt-4 mt-4 border-t border-[var(--border-primary)]">
+                        <h4 class="font-semibold text-center mb-4 text-[var(--text-secondary)]">Glow Effects</h4>
+                    </div>
+                    <div>
+                        <label for="titleGlowSize" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Title Glow</label>
+                        <div class="flex items-center gap-4">
+                            <input id="titleGlowSize" type="range" min="0" max="60" value="20" class="w-full">
+                            <span id="titleGlowSizeValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">20px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="linkGlowSize" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Link Glow</label>
+                        <div class="flex items-center gap-4">
+                            <input id="linkGlowSize" type="range" min="0" max="40" value="15" class="w-full">
+                            <span id="linkGlowSizeValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">15px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="panelGlowSize" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Panel Glow</label>
+                        <div class="flex items-center gap-4">
+                            <input id="panelGlowSize" type="range" min="0" max="80" value="30" class="w-full">
+                            <span id="panelGlowSizeValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">30px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="glowIntensity" class="block mb-2 text-sm font-medium text-[var(--text-secondary)]">Glow Intensity</label>
+                        <div class="flex items-center gap-4">
+                            <input id="glowIntensity" type="range" min="0" max="100" value="30" class="w-full">
+                            <span id="glowIntensityValue" class="text-sm text-[var(--today-header)] font-mono w-10 text-right">30%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1007,6 +1046,56 @@
                 updatePadding(key, innerSliders, masterPanel);
                 innerSliders[key].input.addEventListener('input', () => updatePadding(key, innerSliders, masterPanel));
             }
+
+            // --- Glow Effects Controls ---
+            const titleGlowSlider = document.getElementById('titleGlowSize');
+            const titleGlowValue = document.getElementById('titleGlowSizeValue');
+            const linkGlowSlider = document.getElementById('linkGlowSize');
+            const linkGlowValue = document.getElementById('linkGlowSizeValue');
+            const panelGlowSlider = document.getElementById('panelGlowSize');
+            const panelGlowValue = document.getElementById('panelGlowSizeValue');
+            const glowIntensitySlider = document.getElementById('glowIntensity');
+            const glowIntensityValue = document.getElementById('glowIntensityValue');
+            const twitchLinkDisplay = document.getElementById('twitchLinkDisplay');
+            
+            function updateGlowEffects() {
+                const titleGlow = titleGlowSlider.value;
+                const linkGlow = linkGlowSlider.value;
+                const panelGlow = panelGlowSlider.value;
+                const intensity = glowIntensitySlider.value / 100;
+                
+                // Update CSS variables
+                document.documentElement.style.setProperty('--title-glow-size', titleGlow + 'px');
+                document.documentElement.style.setProperty('--link-glow-size', linkGlow + 'px');
+                document.documentElement.style.setProperty('--panel-glow-size', panelGlow + 'px');
+                
+                // Calculate glow color with intensity
+                const computedStyles = getComputedStyle(document.body);
+                const headerGlow = computedStyles.getPropertyValue('--header-glow').trim();
+                const panelGlowColor = `rgba(255, 255, 255, ${0.1 * intensity})`;
+                document.documentElement.style.setProperty('--panel-glow-color', panelGlowColor);
+                
+                // Update link glow inline style
+                if (twitchLinkDisplay) {
+                    const linkColor = computedStyles.getPropertyValue('--today-header').trim();
+                    twitchLinkDisplay.style.textShadow = `0 0 ${linkGlow}px ${linkColor}`;
+                }
+                
+                // Update display values
+                titleGlowValue.textContent = titleGlow + 'px';
+                linkGlowValue.textContent = linkGlow + 'px';
+                panelGlowValue.textContent = panelGlow + 'px';
+                glowIntensityValue.textContent = Math.round(intensity * 100) + '%';
+            }
+            
+            // Initialize glow effects
+            updateGlowEffects();
+            
+            // Add event listeners
+            titleGlowSlider.addEventListener('input', updateGlowEffects);
+            linkGlowSlider.addEventListener('input', updateGlowEffects);
+            panelGlowSlider.addEventListener('input', updateGlowEffects);
+            glowIntensitySlider.addEventListener('input', updateGlowEffects);
 
             // --- Discord Message Generator ---
             const discordMessageOutput = document.getElementById('discordMessageOutput');
