@@ -327,9 +327,56 @@
 </head>
 <body class="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300">
 
-    <div class="container mx-auto max-w-5xl">
-        <!-- Wrapper for Outer Padding -->
-        <div id="outerPaddingContainer">
+    <!-- Screenshot Generation Overlay -->
+    <div id="screenshotOverlay" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 99999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    ">
+        <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        ">
+            <div style="
+                width: 60px;
+                height: 60px;
+                border: 4px solid rgba(255, 255, 255, 0.2);
+                border-top-color: white;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            "></div>
+            <h2 id="overlayTitle" style="font-size: 24px; margin-bottom: 10px;">Generating Screenshots</h2>
+            <p id="overlayMessage" style="font-size: 16px; opacity: 0.8;">Please wait...</p>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Main Layout Container -->
+    <div class="flex" style="height: 100vh; overflow: hidden;">
+        <!-- Left Column: Schedule Preview -->
+        <div class="flex-1 overflow-auto flex justify-center" style="background-color: var(--bg-primary);">
+            <!-- Container with max width -->
+            <div class="w-full max-w-5xl p-8">
+                <!-- Wrapper for Outer Padding -->
+                <div id="outerPaddingContainer">
             <div id="masterPanel" class="glowing-panel rounded-2xl bg-transparent">
                 <!-- Header/Title -->
                 <header class="text-center mb-10">
@@ -496,14 +543,20 @@
                         <p id="timezoneTextDisplay" class="text-[var(--text-muted)]">All times are in EST</p>
                     </footer>
                 </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Customization Controls -->
-        <div class="mt-8">
-            <!-- Theme Settings -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Theme Settings</h3>
+        <!-- Right Column: Settings Panel -->
+        <div class="overflow-y-auto bg-[var(--bg-secondary)] border-l border-[var(--border-primary)]" style="height: 100vh; width: 768px;">
+            <div class="p-6">
+                <!-- Settings Header -->
+                <h2 class="text-2xl font-bold text-center mb-6 text-[var(--text-primary)] sticky top-0 bg-[var(--bg-secondary)] py-4 border-b border-[var(--border-primary)] -mx-6 px-6">Settings Panel</h2>
+                
+                <!-- Theme Settings -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Theme Settings</h3>
                 <div id="theme-buttons" class="flex flex-wrap justify-center gap-4">
                     <button data-theme="twilight" class="theme-btn active bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Twilight</button>
                     <button data-theme="sunrise" class="theme-btn bg-orange-500 text-white font-bold py-2 px-4 rounded-lg transition-all hover:scale-105">Sunrise</button>
@@ -515,9 +568,9 @@
                 </div>
             </div>
 
-            <!-- Schedule Settings -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Schedule Settings</h3>
+                <!-- Schedule Settings -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Schedule Settings</h3>
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Today's Settings -->
@@ -556,9 +609,9 @@
                 </div>
             </div>
 
-            <!-- Content Editor -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Editor</h3>
+                <!-- Content Editor -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Editor</h3>
                 
                 <!-- Global Settings -->
                 <div class="mb-6">
@@ -634,9 +687,9 @@
                 </div>
             </div>
 
-            <!-- Layout Settings -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Layout Customization</h3>
+                <!-- Layout Settings -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Layout Customization</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <!-- Outer Padding -->
                     <div class="md:col-span-2">
@@ -737,9 +790,9 @@
                 </div>
             </div>
 
-            <!-- Discord Message Generator -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Discord Message Generator</h3>
+                <!-- Discord Message Generator -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Discord Message Generator</h3>
                 <div class="mb-4 relative">
                     <label for="discordTitleInput" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">Announcement Title</label>
                     <div class="flex items-center gap-2">
@@ -773,20 +826,20 @@
                     </div>
                 </div>
                 <textarea id="discordMessageOutput" readonly class="editor-input w-full h-64 rounded-md p-2 resize-none"></textarea>
-                <button id="copyMessageBtn" class="schedule-btn active mt-4 w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Copy Message</button>
-            </div>
+                    <button id="copyMessageBtn" class="schedule-btn active mt-4 w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Copy Message</button>
+                </div>
 
-             <!-- Export Schedule -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Export Schedule</h3>
-                <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
-                    💾 Download Schedule as PNG
-                </button>
-            </div>
+                <!-- Export Schedule -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Export Schedule</h3>
+                    <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        💾 Download Schedule as PNG
+                    </button>
+                </div>
 
-            <!-- Weekly Planner -->
-            <div class="mb-8 p-6 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)]">
-                <h3 class="text-xl font-bold text-center mb-6 text-[var(--text-secondary)]">Weekly Schedule Planner</h3>
+                <!-- Weekly Planner -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Weekly Schedule Planner</h3>
                 <p class="text-sm text-center text-[var(--text-muted)] mb-6">Plan your entire week and generate individual schedule images for each day</p>
                 
                 <!-- Days Grid -->
@@ -819,6 +872,7 @@
                         </button>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -1578,12 +1632,32 @@
 
             async function generateWeekImages(options = { pixelRatio: 3, download: true }) {
                 const { pixelRatio, download } = options;
-                // Preserve original state
+                // Show overlay to prevent flashing
+                const overlay = document.getElementById('screenshotOverlay');
+                const overlayTitle = document.getElementById('overlayTitle');
+                const overlayMessage = document.getElementById('overlayMessage');
+                
+                if (download && overlay) {
+                    overlay.style.display = 'block';
+                    // Force reflow to ensure display:block is applied before opacity transition
+                    overlay.offsetHeight;
+                    overlay.style.opacity = '1';
+                    overlayTitle.textContent = 'Generating Screenshots';
+                    overlayMessage.textContent = 'Preparing...';
+                    // Wait for overlay to fully appear
+                    await sleep(350);
+                }
+                
+                // Preserve original state including the current theme
                 const originalTodayTitle = todayTitleEl.innerHTML;
                 const originalTomorrowTitle = tomorrowTitleEl.innerHTML;
                 const originalBodyClass = document.body.className;
                 const originalPanelScopeChecked = panelScopeToggle.checked;
                 const originalIsWork = !scheduleControls.today.workSchedule.classList.contains('hidden'); // work shown means true
+                
+                // Extract the original theme from body class
+                const themeMatch = originalBodyClass.match(/theme-(\w+)/);
+                const originalTheme = themeMatch ? themeMatch[1] : 'twilight'
 
                 // Force Today Only scope
                 if (panelScopeToggle.checked) {
@@ -1595,6 +1669,12 @@
                 for (let i = 0; i < weekPlan.length; i++) {
                     const { date, isWork } = weekPlan[i];
                     const theme = weekThemeOrder[i % weekThemeOrder.length];
+                    
+                    // Update overlay progress for both download and preview
+                    if (overlayMessage && overlay && overlay.style.display !== 'none') {
+                        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+                        overlayMessage.textContent = `Processing ${dayName} (${i+1}/7)`;
+                    }
 
                     // Apply theme and schedule
                     setTheme(theme);
@@ -1614,7 +1694,7 @@
                         link.click();
                         await sleep(150); // small delay between downloads
                     }
-                    if (generateWeeklyBtn) {
+                    if (generateWeeklyBtn && !download) {
                         generateWeeklyBtn.textContent = `Generating... (${i+1}/7)`;
                     }
                 }
@@ -1627,6 +1707,20 @@
                 if (panelScopeToggle.checked !== originalPanelScopeChecked) {
                     panelScopeToggle.checked = originalPanelScopeChecked;
                     panelScopeToggle.dispatchEvent(new Event('change'));
+                }
+                
+                // Restore the original theme and update button highlights
+                setTheme(originalTheme);
+                updateGlowEffects(); // Restore glow effects for the original theme
+                
+                // Hide overlay with fade out
+                if (download && overlay) {
+                    overlayMessage.textContent = 'Complete!';
+                    await sleep(500);
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 300);
                 }
 
                 return results;
@@ -1657,6 +1751,20 @@
             if (previewWeeklyBtn) {
                 previewWeeklyBtn.addEventListener('click', async () => {
                     try {
+                        // Show overlay for preview generation
+                        const overlay = document.getElementById('screenshotOverlay');
+                        const overlayTitle = document.getElementById('overlayTitle');
+                        const overlayMessage = document.getElementById('overlayMessage');
+                        
+                        if (overlay) {
+                            overlay.style.display = 'block';
+                            overlay.offsetHeight;
+                            overlay.style.opacity = '1';
+                            overlayTitle.textContent = 'Generating Previews';
+                            overlayMessage.textContent = 'Preparing preview images...';
+                            await sleep(350);
+                        }
+                        
                         previewWeeklyBtn.disabled = true;
                         previewWeeklyBtn.textContent = 'Generating Previews...';
                         const images = await generateWeekImages({ pixelRatio: 1.5, download: false });
@@ -1676,9 +1784,29 @@
                             wrap.appendChild(imageEl);
                             weeklyPreviewContainer.appendChild(wrap);
                         });
+                        // Hide overlay before showing modal
+                        if (overlay) {
+                            overlayMessage.textContent = 'Complete!';
+                            await sleep(300);
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 300);
+                            // Small delay to ensure overlay is hidden before modal appears
+                            await sleep(350);
+                        }
+                        
                         weeklyModal.style.display = 'block';
                     } catch (e) {
                         console.error(e);
+                        // Hide overlay on error
+                        const overlay = document.getElementById('screenshotOverlay');
+                        if (overlay && overlay.style.display !== 'none') {
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 300);
+                        }
                     } finally {
                         previewWeeklyBtn.textContent = '👁️ Preview All Days';
                         previewWeeklyBtn.disabled = false;
@@ -1691,9 +1819,27 @@
             if (downloadAllWeeklyBtn) {
                 downloadAllWeeklyBtn.addEventListener('click', async () => {
                     try {
+                        // Show overlay for ZIP generation
+                        const overlay = document.getElementById('screenshotOverlay');
+                        const overlayTitle = document.getElementById('overlayTitle');
+                        const overlayMessage = document.getElementById('overlayMessage');
+                        
+                        if (overlay) {
+                            overlay.style.display = 'block';
+                            overlay.offsetHeight;
+                            overlay.style.opacity = '1';
+                            overlayTitle.textContent = 'Creating ZIP Archive';
+                            overlayMessage.textContent = 'Generating screenshots...';
+                            await sleep(350);
+                        }
+                        
                         downloadAllWeeklyBtn.disabled = true;
                         downloadAllWeeklyBtn.textContent = 'Zipping...';
                         const images = await generateWeekImages({ pixelRatio: 3, download: false });
+                        if (overlayMessage) {
+                            overlayMessage.textContent = 'Creating ZIP archive...';
+                        }
+                        
                         if (!window.JSZip) throw new Error('JSZip not loaded');
                         const zip = new JSZip();
                         images.forEach(img => {
@@ -1712,6 +1858,17 @@
                             a.click();
                             URL.revokeObjectURL(url);
                         }
+                        
+                        // Hide overlay
+                        if (overlay) {
+                            overlayMessage.textContent = 'Complete!';
+                            await sleep(500);
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 300);
+                        }
+                        
                         downloadAllWeeklyBtn.textContent = 'Downloaded!';
                         setTimeout(() => { downloadAllWeeklyBtn.textContent = '💾 Download All as ZIP'; downloadAllWeeklyBtn.disabled = false; }, 1200);
                     } catch (e) {
