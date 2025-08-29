@@ -323,6 +323,7 @@
             overflow: hidden;
         }
     </style>
+    <script src="editor-slots.js" defer></script>
 </head>
 <body class="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased transition-colors duration-300">
 
@@ -590,24 +591,14 @@
                         <hr class="border-[var(--border-primary)]">
                         <h4 class="font-semibold text-[var(--today-accent)]">Normal Day Schedule</h4>
                         <!-- Normal Day Inputs -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <input type="text" id="todayNormalSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot3TitleInput" placeholder="Slot 3 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot3DescInput" placeholder="Slot 3 Description" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot4TitleInput" placeholder="Slot 4 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayNormalSlot4DescInput" placeholder="Slot 4 Description" class="editor-input rounded p-2">
+                        <div id="todayNormalEditorContainer" class="space-y-2">
+                            <!-- Dynamic slots will be inserted here -->
                         </div>
                         <hr class="border-[var(--border-primary)]">
                         <h4 class="font-semibold text-[var(--today-accent)]">Work Day Schedule</h4>
                         <!-- Work Day Inputs -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <input type="text" id="todayWorkSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayWorkSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
-                            <input type="text" id="todayWorkSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
-                            <input type="text" id="todayWorkSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                        <div id="todayWorkEditorContainer" class="space-y-2">
+                            <!-- Dynamic slots will be inserted here -->
                         </div>
                     </div>
                 </div>
@@ -622,24 +613,14 @@
                         <hr class="border-[var(--border-primary)]">
                         <h4 class="font-semibold text-[var(--tomorrow-text)]">Normal Day Schedule</h4>
                         <!-- Normal Day Inputs -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <input type="text" id="tomorrowNormalSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot3TitleInput" placeholder="Slot 3 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot3DescInput" placeholder="Slot 3 Description" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot4TitleInput" placeholder="Slot 4 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowNormalSlot4DescInput" placeholder="Slot 4 Description" class="editor-input rounded p-2">
+                        <div id="tomorrowNormalEditorContainer" class="space-y-2">
+                            <!-- Dynamic slots will be inserted here -->
                         </div>
                         <hr class="border-[var(--border-primary)]">
                         <h4 class="font-semibold text-[var(--tomorrow-text)]">Work Day Schedule</h4>
                         <!-- Work Day Inputs -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <input type="text" id="tomorrowWorkSlot1TitleInput" placeholder="Slot 1 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowWorkSlot1DescInput" placeholder="Slot 1 Description" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowWorkSlot2TitleInput" placeholder="Slot 2 Title" class="editor-input rounded p-2">
-                            <input type="text" id="tomorrowWorkSlot2DescInput" placeholder="Slot 2 Description" class="editor-input rounded p-2">
+                        <div id="tomorrowWorkEditorContainer" class="space-y-2">
+                            <!-- Dynamic slots will be inserted here -->
                         </div>
                     </div>
                 </div>
