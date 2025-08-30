@@ -852,11 +852,20 @@
                     <button id="copyMessageBtn" class="schedule-btn active mt-4 w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">Copy Message</button>
                 </div>
 
+                <!-- Save Settings -->
+                <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                    <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Save Configuration</h3>
+                    <button id="saveAllSettingsBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
+                        💾 Save All Settings
+                    </button>
+                    <p id="saveStatusMessage" class="text-center text-sm mt-2 text-[var(--text-muted)] hidden"></p>
+                </div>
+
                 <!-- Export Schedule -->
                 <div class="mb-6 p-4 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
                     <h3 class="text-lg font-bold text-center mb-4 text-[var(--text-secondary)]">Export Schedule</h3>
                     <button id="exportBtn" class="schedule-btn active w-full text-white font-bold py-3 px-6 rounded-lg transition-transform hover:scale-105">
-                        💾 Download Schedule as PNG
+                        📸 Download Schedule as PNG
                     </button>
                 </div>
 
@@ -968,6 +977,137 @@
                             }
                         }
                         
+                        // Apply export scope
+                        if (config.exportScope) {
+                            const panelScopeToggle = document.getElementById('panelScopeToggle');
+                            if (panelScopeToggle) {
+                                panelScopeToggle.checked = (config.exportScope === 'full');
+                                panelScopeToggle.dispatchEvent(new Event('change'));
+                            }
+                        }
+                        
+                        // Apply layout settings
+                        if (config.layout) {
+                            // Apply outer padding
+                            if (config.layout.outerPadding) {
+                                const outerPaddingTop = document.getElementById('outerPaddingTop');
+                                const outerPaddingBottom = document.getElementById('outerPaddingBottom');
+                                const outerPaddingLeft = document.getElementById('outerPaddingLeft');
+                                const outerPaddingRight = document.getElementById('outerPaddingRight');
+                                
+                                if (outerPaddingTop && config.layout.outerPadding.top !== undefined) {
+                                    outerPaddingTop.value = config.layout.outerPadding.top;
+                                    outerPaddingTop.dispatchEvent(new Event('input'));
+                                }
+                                if (outerPaddingBottom && config.layout.outerPadding.bottom !== undefined) {
+                                    outerPaddingBottom.value = config.layout.outerPadding.bottom;
+                                    outerPaddingBottom.dispatchEvent(new Event('input'));
+                                }
+                                if (outerPaddingLeft && config.layout.outerPadding.left !== undefined) {
+                                    outerPaddingLeft.value = config.layout.outerPadding.left;
+                                    outerPaddingLeft.dispatchEvent(new Event('input'));
+                                }
+                                if (outerPaddingRight && config.layout.outerPadding.right !== undefined) {
+                                    outerPaddingRight.value = config.layout.outerPadding.right;
+                                    outerPaddingRight.dispatchEvent(new Event('input'));
+                                }
+                            }
+                            
+                            // Apply inner padding
+                            if (config.layout.innerPadding) {
+                                const innerPaddingTop = document.getElementById('innerPaddingTop');
+                                const innerPaddingBottom = document.getElementById('innerPaddingBottom');
+                                const innerPaddingLeft = document.getElementById('innerPaddingLeft');
+                                const innerPaddingRight = document.getElementById('innerPaddingRight');
+                                
+                                if (innerPaddingTop && config.layout.innerPadding.top !== undefined) {
+                                    innerPaddingTop.value = config.layout.innerPadding.top;
+                                    innerPaddingTop.dispatchEvent(new Event('input'));
+                                }
+                                if (innerPaddingBottom && config.layout.innerPadding.bottom !== undefined) {
+                                    innerPaddingBottom.value = config.layout.innerPadding.bottom;
+                                    innerPaddingBottom.dispatchEvent(new Event('input'));
+                                }
+                                if (innerPaddingLeft && config.layout.innerPadding.left !== undefined) {
+                                    innerPaddingLeft.value = config.layout.innerPadding.left;
+                                    innerPaddingLeft.dispatchEvent(new Event('input'));
+                                }
+                                if (innerPaddingRight && config.layout.innerPadding.right !== undefined) {
+                                    innerPaddingRight.value = config.layout.innerPadding.right;
+                                    innerPaddingRight.dispatchEvent(new Event('input'));
+                                }
+                            }
+                        }
+                        
+                        // Apply glow effects
+                        if (config.glowEffects) {
+                            const titleGlowSize = document.getElementById('titleGlowSize');
+                            const linkGlowSize = document.getElementById('linkGlowSize');
+                            const panelGlowSize = document.getElementById('panelGlowSize');
+                            const glowIntensity = document.getElementById('glowIntensity');
+                            
+                            if (titleGlowSize && config.glowEffects.titleGlowSize !== undefined) {
+                                titleGlowSize.value = config.glowEffects.titleGlowSize;
+                                titleGlowSize.dispatchEvent(new Event('input'));
+                            }
+                            if (linkGlowSize && config.glowEffects.linkGlowSize !== undefined) {
+                                linkGlowSize.value = config.glowEffects.linkGlowSize;
+                                linkGlowSize.dispatchEvent(new Event('input'));
+                            }
+                            if (panelGlowSize && config.glowEffects.panelGlowSize !== undefined) {
+                                panelGlowSize.value = config.glowEffects.panelGlowSize;
+                                panelGlowSize.dispatchEvent(new Event('input'));
+                            }
+                            if (glowIntensity && config.glowEffects.glowIntensity !== undefined) {
+                                glowIntensity.value = config.glowEffects.glowIntensity;
+                                glowIntensity.dispatchEvent(new Event('input'));
+                            }
+                        }
+                        
+                        // Apply timezone text
+                        if (config.timezoneText) {
+                            const timezoneTextInput = document.getElementById('timezoneTextInput');
+                            const timezoneTextDisplay = document.getElementById('timezoneTextDisplay');
+                            if (timezoneTextInput) {
+                                timezoneTextInput.value = config.timezoneText;
+                                if (timezoneTextDisplay) {
+                                    timezoneTextDisplay.textContent = config.timezoneText;
+                                }
+                            }
+                        }
+                        
+                        // Apply Discord message generator settings
+                        if (config.discord) {
+                            const discordTitleInput = document.getElementById('discordTitleInput');
+                            const discordTemplateInput = document.getElementById('discordTemplateInput');
+                            const useTimestampsToggle = document.getElementById('useTimestampsToggle');
+                            const timestampFormatSelect = document.getElementById('timestampFormat');
+                            
+                            if (discordTitleInput && config.discord.title !== undefined) {
+                                discordTitleInput.value = config.discord.title;
+                            }
+                            
+                            if (discordTemplateInput && config.discord.template !== undefined) {
+                                discordTemplateInput.value = config.discord.template;
+                            }
+                            
+                            if (useTimestampsToggle && config.discord.useTimestamps !== undefined) {
+                                useTimestampsToggle.checked = config.discord.useTimestamps;
+                            }
+                            
+                            if (timestampFormatSelect && config.discord.timestampFormat !== undefined) {
+                                timestampFormatSelect.value = config.discord.timestampFormat;
+                            }
+                            
+                            // Regenerate the Discord message with loaded settings
+                            if (typeof generateDiscordMessage === 'function') {
+                                // Delay to ensure all elements are ready
+                                setTimeout(() => {
+                                    generateDiscordMessage();
+                                }, 100);
+                            }
+                        }
+                        
                         console.log('Configuration loaded from server:', config);
                     } else {
                         console.log('Server not available, using default configuration');
@@ -1000,6 +1140,27 @@
             tomorrowTitleEl.innerHTML = tomorrowTitleText;
 
 
+            // --- Function to save config to server ---
+            async function saveConfigToServer(updates) {
+                try {
+                    const response = await fetch('http://localhost:5555/api/config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updates)
+                    });
+                    
+                    if (response.ok) {
+                        console.log('Configuration saved to server');
+                    } else {
+                        console.error('Failed to save configuration');
+                    }
+                } catch (error) {
+                    console.error('Error saving configuration:', error);
+                }
+            }
+            
             // --- Theme Controls ---
             const themeButtonsContainer = document.getElementById('theme-buttons');
             themeButtonsContainer.addEventListener('click', (e) => {
@@ -1292,6 +1453,7 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 
                 // Set initial value for the input from the display element
                 inputEl.value = displayEl.innerHTML;
+                
                 // Add event listener to update display on input
                 inputEl.addEventListener('input', () => {
                     displayEl.innerHTML = inputEl.value;
@@ -2079,6 +2241,110 @@ I will be streaming on Twitch \`\`Today\`\` from:
                 });
             }
 
+            // --- Save All Settings Button ---
+            const saveAllSettingsBtn = document.getElementById('saveAllSettingsBtn');
+            const saveStatusMessage = document.getElementById('saveStatusMessage');
+            
+            if (saveAllSettingsBtn) {
+                saveAllSettingsBtn.addEventListener('click', async () => {
+                    // Gather all settings
+                    const configToSave = {
+                        // Theme
+                        theme: document.querySelector('.theme-btn.active')?.dataset.theme || 'twilight',
+                        
+                        // Channel info
+                        channel: {
+                            name: channelNameInput.value,
+                            link: twitchLinkInput.value
+                        },
+                        
+                        // Titles
+                        todayTitle: document.getElementById('todayTitleInput')?.value,
+                        tomorrowTitle: document.getElementById('tomorrowTitleInput')?.value,
+                        
+                        // Timezone
+                        timezoneText: timezoneTextInput.value,
+                        
+                        // Layout settings
+                        layout: {
+                            outerPadding: {
+                                top: parseInt(outerSliders.paddingTop.input.value),
+                                bottom: parseInt(outerSliders.paddingBottom.input.value),
+                                left: parseInt(outerSliders.paddingLeft.input.value),
+                                right: parseInt(outerSliders.paddingRight.input.value)
+                            },
+                            innerPadding: {
+                                top: parseInt(innerSliders.paddingTop.input.value),
+                                bottom: parseInt(innerSliders.paddingBottom.input.value),
+                                left: parseInt(innerSliders.paddingLeft.input.value),
+                                right: parseInt(innerSliders.paddingRight.input.value)
+                            }
+                        },
+                        
+                        // Glow effects
+                        glowEffects: {
+                            titleGlowSize: parseInt(titleGlowSlider.value),
+                            linkGlowSize: parseInt(linkGlowSlider.value),
+                            panelGlowSize: parseInt(panelGlowSlider.value),
+                            glowIntensity: parseInt(glowIntensitySlider.value)
+                        },
+                        
+                        // Schedule types
+                        schedule: {
+                            today: {
+                                type: scheduleControls.today.normalBtn.classList.contains('active') ? 'normal' : 'work'
+                            },
+                            tomorrow: {
+                                type: scheduleControls.tomorrow.normalBtn.classList.contains('active') ? 'normal' : 'work'
+                            }
+                        },
+                        
+                        // Export scope
+                        exportScope: panelScopeToggle.checked ? 'full' : 'today',
+                        
+                        // Discord message generator settings
+                        discord: {
+                            title: discordTitleInput.value,
+                            template: discordTemplateInput.value,
+                            useTimestamps: useTimestampsToggle.checked,
+                            timestampFormat: timestampFormatSelect.value
+                        }
+                    };
+                    
+                    // Save to server
+                    saveAllSettingsBtn.disabled = true;
+                    saveAllSettingsBtn.textContent = 'Saving...';
+                    
+                    try {
+                        await saveConfigToServer(configToSave);
+                        
+                        // Show success message
+                        saveAllSettingsBtn.textContent = '✅ Saved!';
+                        saveStatusMessage.textContent = 'All settings saved successfully';
+                        saveStatusMessage.classList.remove('hidden');
+                        saveStatusMessage.style.color = 'var(--today-accent)';
+                        
+                        setTimeout(() => {
+                            saveAllSettingsBtn.textContent = '💾 Save All Settings';
+                            saveAllSettingsBtn.disabled = false;
+                            saveStatusMessage.classList.add('hidden');
+                        }, 2000);
+                    } catch (error) {
+                        // Show error message
+                        saveAllSettingsBtn.textContent = '❌ Error';
+                        saveStatusMessage.textContent = 'Failed to save settings';
+                        saveStatusMessage.classList.remove('hidden');
+                        saveStatusMessage.style.color = 'var(--tomorrow-header)';
+                        
+                        setTimeout(() => {
+                            saveAllSettingsBtn.textContent = '💾 Save All Settings';
+                            saveAllSettingsBtn.disabled = false;
+                            saveStatusMessage.classList.add('hidden');
+                        }, 3000);
+                    }
+                });
+            }
+            
             // Initial generation
             generateDiscordMessage();
             

@@ -7,19 +7,14 @@ Enhanced version with dynamic slot management, time editing, and add/delete func
 import json
 import webbrowser
 import sys
+import subprocess
 import threading
 import time
 from pathlib import Path
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 import tkinter as tk
 from tkinter import ttk, messagebox, font
 import tkinter.colorchooser as colorchooser
 from datetime import datetime, timedelta
-
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
 class TimePickerDialog:
     """Custom time picker dialog for selecting stream times."""
@@ -296,7 +291,8 @@ class SlotEditorFrame(tk.Frame):
 class StreamSchedulerManager:
     def __init__(self):
         self.script_dir = Path(__file__).parent
-        self.config_file = self.script_dir / "config.json"
+        # Use the config.json in the HTML directory (parent directory) for sharing with Node.js server
+        self.config_file = self.script_dir.parent / "config.json"
         self.html_file = self.script_dir.parent / "StreamSchedulerImageGenerator.html"
         self.config = self.load_config()
         self.server_thread = None
@@ -334,7 +330,7 @@ class StreamSchedulerManager:
                 "link": "https://www.twitch.tv/audaciousgabe"
             },
             "theme": "twilight",
-            "timezone": "EST",
+            "timezone": "All times are in EST",
             "exportScope": "full",
             "schedule": {
                 "today": {
@@ -376,26 +372,33 @@ class StreamSchedulerManager:
                     {
                         "name": "Stream Starting Soon",
                         "title": "🔴 Stream Starting Soon! 🔴",
-                        "message": "@everyone Hey folks! Stream is starting in {{time}} minutes!\n\n🎮 **Today's Schedule:**\n{{schedule}}\n\n📺 Join us at: {{link}}",
+                        "message": "@everyone Hey folks! Stream is starting soon!\n\n🎮 **Today's Schedule:**\n[today]\n\n📺 Join us at: [link]",
                         "useTimestamp": True,
                         "timestampFormat": "R"
                     },
                     {
                         "name": "Stream Live",
                         "title": "🔴 WE'RE LIVE! 🔴",
-                        "message": "@everyone We're live right now!\n\n🎮 **Today's Schedule:**\n{{schedule}}\n\n📺 Watch at: {{link}}",
-                        "useTimestamp": False,
+                        "message": "@everyone We're live right now!\n\n🎮 **Today's Schedule:**\n[today]\n\n📺 Watch at: [link]",
+                        "useTimestamp": True,
                         "timestampFormat": "t"
                     },
                     {
                         "name": "Schedule Update",
                         "title": "📅 Schedule Update 📅",
-                        "message": "Hey everyone! Here's our streaming schedule:\n\n**Today:** {{today_type}}\n{{today_schedule}}\n\n**Tomorrow:** {{tomorrow_type}}\n{{tomorrow_schedule}}\n\n⏰ Times are in {{timezone}}",
-                        "useTimestamp": False,
+                        "message": "Hey everyone! Here's our streaming schedule:\n\n**Today:**\n[today]\n\n**Tomorrow:**\n[tomorrow]\n\n[timezone]",
+                        "useTimestamp": True,
                         "timestampFormat": "f"
+                    },
+                    {
+                        "name": "Custom Stream Schedule",
+                        "title": "Doubling our Usual Hours! ✨👏",
+                        "message": "@Twitch Enjoyers : [title]\n\nI will be streaming on Twitch ``Today`` from:\n\n[today]\n\n``Tomorrow`` I'll be streaming from:\n\n[tomorrow]\n\n[timezone]\n\n[link]",
+                        "useTimestamp": True,
+                        "timestampFormat": "t"
                     }
                 ],
-                "currentTemplate": 0,
+                "currentTemplate": 3,
                 "customMessage": {
                     "title": "Doubling our Usual Hours! ✨👏",
                     "message": "",
@@ -416,13 +419,50 @@ class StreamSchedulerManager:
             return False
     
     def start_server(self):
-        """Start the Flask server in a separate thread."""
-        def run_server():
-            app.run(host='127.0.0.1', port=5555, debug=False, use_reloader=False)
+        """Start the npm server in the HTML directory."""
+        html_dir = self.html_file.parent
         
-        self.server_thread = threading.Thread(target=run_server, daemon=True)
+        def run_npm_server():
+            try:
+                # Check if npm is available
+                subprocess.run(["npm", "--version"], check=True, capture_output=True, text=True)
+                
+                # Run npm start in the HTML directory
+                print(f"Starting npm server in {html_dir}...")
+                process = subprocess.Popen(
+                    ["npm", "start"],
+                    cwd=html_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    shell=True
+                )
+                
+                # Monitor the output
+                for line in process.stdout:
+                    if "Server running" in line or "localhost:5555" in line:
+                        print(line.strip())
+                        break
+                    print(line.strip())
+                
+                # Keep the process running
+                process.wait()
+                
+            except subprocess.CalledProcessError:
+                print("Error: npm is not installed or not in PATH")
+                print("Please install Node.js and npm to use the server functionality")
+            except FileNotFoundError:
+                print("Error: npm command not found")
+                print("Please install Node.js and npm from https://nodejs.org/")
+            except Exception as e:
+                print(f"Error starting npm server: {e}")
+        
+        self.server_thread = threading.Thread(target=run_npm_server, daemon=True)
         self.server_thread.start()
-        print("Local server started on http://127.0.0.1:5555")
+        
+        # Give the server a moment to start
+        time.sleep(2)
+        print("Server starting... Check console for details.")
     
     def open_html(self):
         """Open the HTML file in the browser."""
@@ -722,10 +762,10 @@ class StreamSchedulerManager:
         self.link_entry.grid(row=1, column=1, padx=10, pady=5)
         self.link_entry.insert(0, self.config["channel"]["link"])
         
-        tk.Label(channel_frame, text="Timezone:", bg=bg_color, fg=fg_color).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        tk.Label(channel_frame, text="Timezone Message:", bg=bg_color, fg=fg_color).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
         self.timezone_entry = tk.Entry(channel_frame, bg=entry_bg, fg=fg_color, width=30)
         self.timezone_entry.grid(row=2, column=1, padx=10, pady=5)
-        self.timezone_entry.insert(0, self.config.get("timezone", "EST"))
+        self.timezone_entry.insert(0, self.config.get("timezone", "All times are in EST"))
         
         # Theme selection
         theme_frame = tk.LabelFrame(
@@ -910,24 +950,134 @@ class StreamSchedulerManager:
             fg=fg_color
         ).pack(side=tk.LEFT, padx=5)
         
-        self.discord_template_var = tk.IntVar(value=0)
-        template_names = [t["name"] for t in self.config["discord"]["templates"]] + ["Custom"]
+        # Get current template index and convert to name
+        current_template_index = self.config["discord"].get("currentTemplate", 3)
+        template_names = [t["name"] for t in self.config["discord"]["templates"]]
+        current_template_name = template_names[current_template_index] if current_template_index < len(template_names) else template_names[0]
         
-        for i, name in enumerate(template_names):
-            tk.Radiobutton(
-                template_frame,
-                text=name,
-                variable=self.discord_template_var,
-                value=i,
-                font=normal_font,
-                bg=bg_color,
-                fg=fg_color,
-                selectcolor=button_bg,
-                command=self.generate_discord_message
-            ).pack(side=tk.LEFT, padx=5)
+        self.discord_template_var = tk.StringVar(value=current_template_name)
+        self.template_combo = ttk.Combobox(
+            template_frame,
+            textvariable=self.discord_template_var,
+            values=template_names,
+            state="readonly",
+            width=30
+        )
+        self.template_combo.pack(side=tk.LEFT, padx=5)
+        self.template_combo.bind('<<ComboboxSelected>>', lambda e: self.on_template_selected())
+        
+        # Add template management buttons
+        template_btn_frame = tk.Frame(template_frame, bg=bg_color)
+        template_btn_frame.pack(side=tk.LEFT, padx=20)
+        
+        tk.Button(
+            template_btn_frame,
+            text="Edit",
+            command=self.edit_template,
+            bg=button_bg,
+            fg=fg_color,
+            padx=10
+        ).pack(side=tk.LEFT, padx=2)
+        
+        tk.Button(
+            template_btn_frame,
+            text="New",
+            command=self.new_template,
+            bg=button_bg,
+            fg=fg_color,
+            padx=10
+        ).pack(side=tk.LEFT, padx=2)
+        
+        tk.Button(
+            template_btn_frame,
+            text="Delete",
+            command=self.delete_template,
+            bg=button_bg,
+            fg=fg_color,
+            padx=10
+        ).pack(side=tk.LEFT, padx=2)
+        
+        # Template title and message
+        template_edit_frame = tk.LabelFrame(
+            discord_frame,
+            text="Template Editor",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        )
+        template_edit_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Title entry
+        title_frame = tk.Frame(template_edit_frame, bg=bg_color)
+        title_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Label(
+            title_frame,
+            text="Title:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color,
+            width=10
+        ).pack(side=tk.LEFT)
+        
+        self.discord_title_entry = tk.Entry(
+            title_frame,
+            bg=entry_bg,
+            fg=fg_color,
+            font=normal_font,
+            insertbackground=fg_color
+        )
+        self.discord_title_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        
+        # Message template text
+        message_frame = tk.Frame(template_edit_frame, bg=bg_color)
+        message_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        tk.Label(
+            message_frame,
+            text="Message Template:",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(anchor=tk.W)
+        
+        # Template text area with scrollbar
+        text_frame = tk.Frame(message_frame, bg=bg_color)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+        
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.discord_template_text = tk.Text(
+            text_frame,
+            bg=entry_bg,
+            fg=fg_color,
+            font=('Consolas', 10),
+            height=8,
+            width=60,
+            wrap=tk.WORD,
+            insertbackground=fg_color,
+            yscrollcommand=scrollbar.set
+        )
+        self.discord_template_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.discord_template_text.yview)
+        
+        # Placeholder help text
+        help_frame = tk.Frame(template_edit_frame, bg=bg_color)
+        help_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        help_text = "Available placeholders: [title], [today], [tomorrow], [link], [timezone]"
+        tk.Label(
+            help_frame,
+            text=help_text,
+            font=('Segoe UI', 9),
+            bg=bg_color,
+            fg=fg_color,
+            wraplength=500
+        ).pack()
         
         # Timestamp settings
-        timestamp_frame = tk.Frame(discord_frame, bg=bg_color)
+        timestamp_frame = tk.Frame(template_edit_frame, bg=bg_color)
         timestamp_frame.pack(fill=tk.X, padx=10, pady=5)
         
         self.use_timestamps = tk.BooleanVar(value=True)
@@ -938,31 +1088,88 @@ class StreamSchedulerManager:
             font=normal_font,
             bg=bg_color,
             fg=fg_color,
-            selectcolor=button_bg
+            selectcolor=button_bg,
+            command=self.update_template_settings
         ).pack(side=tk.LEFT, padx=5)
         
-        # Discord output
-        self.discord_output = tk.Text(
-            discord_frame,
+        tk.Label(
+            timestamp_frame,
+            text="Format:",
             font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        ).pack(side=tk.LEFT, padx=5)
+        
+        self.timestamp_format_var = tk.StringVar(value="R")
+        timestamp_formats = [
+            ("R", "Relative (in 2 hours)"),
+            ("t", "Short Time (10:30 AM)"),
+            ("T", "Long Time (10:30:00 AM)"),
+            ("f", "Short Date/Time"),
+            ("F", "Long Date/Time")
+        ]
+        
+        self.timestamp_format_combo = ttk.Combobox(
+            timestamp_frame,
+            textvariable=self.timestamp_format_var,
+            values=[f"{code} - {desc}" for code, desc in timestamp_formats],
+            state="readonly",
+            width=25
+        )
+        self.timestamp_format_combo.pack(side=tk.LEFT, padx=5)
+        self.timestamp_format_combo.bind('<<ComboboxSelected>>', lambda e: self.update_template_settings())
+        
+        # Preview frame
+        preview_frame = tk.LabelFrame(
+            discord_frame,
+            text="Message Preview",
+            font=normal_font,
+            bg=bg_color,
+            fg=fg_color
+        )
+        preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Discord output
+        preview_text_frame = tk.Frame(preview_frame, bg=bg_color)
+        preview_text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        preview_scrollbar = tk.Scrollbar(preview_text_frame)
+        preview_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.discord_output = tk.Text(
+            preview_text_frame,
+            font=('Consolas', 10),
             bg=entry_bg,
             fg=fg_color,
             height=10,
             width=60,
-            wrap=tk.WORD
+            wrap=tk.WORD,
+            yscrollcommand=preview_scrollbar.set
         )
-        self.discord_output.pack(padx=10, pady=10)
+        self.discord_output.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        preview_scrollbar.config(command=self.discord_output.yview)
         
         # Buttons
-        button_frame = tk.Frame(discord_frame, bg=bg_color)
+        button_frame = tk.Frame(preview_frame, bg=bg_color)
         button_frame.pack(pady=10)
+        
+        tk.Button(
+            button_frame,
+            text="Save Template",
+            font=normal_font,
+            bg="#50fa7b",
+            fg=bg_color,
+            command=self.save_template_changes,
+            padx=15,
+            pady=5
+        ).pack(side=tk.LEFT, padx=5)
         
         tk.Button(
             button_frame,
             text="Generate Message",
             font=normal_font,
-            bg="#50fa7b",
-            fg=bg_color,
+            bg="#6272a4",
+            fg="white",
             command=self.generate_discord_message,
             padx=15,
             pady=5
@@ -978,63 +1185,308 @@ class StreamSchedulerManager:
             padx=15,
             pady=5
         ).pack(side=tk.LEFT, padx=5)
+        
+        # Initialize with first template
+        self.on_template_selected()
+    
+    def on_template_selected(self, event=None):
+        """Handle template selection from combobox."""
+        template_name = self.discord_template_var.get()
+        
+        # Find the selected template
+        template = None
+        for t in self.config["discord"]["templates"]:
+            if t["name"] == template_name:
+                template = t
+                break
+        
+        if template:
+            # Load template into editor
+            self.discord_title_entry.delete(0, tk.END)
+            self.discord_title_entry.insert(0, template.get("title", ""))
+            
+            self.discord_template_text.delete("1.0", tk.END)
+            self.discord_template_text.insert("1.0", template.get("message", ""))
+            
+            self.use_timestamps.set(template.get("useTimestamp", True))
+            
+            # Set timestamp format
+            format_code = template.get("timestampFormat", "R")
+            format_map = {
+                "R": "R - Relative (in 2 hours)",
+                "t": "t - Short Time (10:30 AM)",
+                "T": "T - Long Time (10:30:00 AM)",
+                "f": "f - Short Date/Time",
+                "F": "F - Long Date/Time"
+            }
+            if format_code in format_map:
+                self.timestamp_format_var.set(format_map[format_code])
+            
+            # Generate preview
+            self.generate_discord_message()
+    
+    def edit_template(self):
+        """Edit the selected template."""
+        # Current template is already loaded in the editor
+        messagebox.showinfo("Edit Template", "You can now edit the template. Click 'Save Template' when done.")
+    
+    def new_template(self):
+        """Create a new template."""
+        # Ask for template name
+        dialog = tk.Toplevel(self.root)
+        dialog.title("New Template")
+        dialog.geometry("400x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        bg_color = "#1a1a2e"
+        fg_color = "#eee"
+        entry_bg = "#0f3460"
+        
+        dialog.configure(bg=bg_color)
+        
+        tk.Label(
+            dialog,
+            text="Template Name:",
+            bg=bg_color,
+            fg=fg_color
+        ).pack(pady=10)
+        
+        name_entry = tk.Entry(
+            dialog,
+            bg=entry_bg,
+            fg=fg_color,
+            width=40
+        )
+        name_entry.pack(pady=5)
+        
+        def create_template():
+            name = name_entry.get().strip()
+            if name:
+                # Check if name already exists
+                for t in self.config["discord"]["templates"]:
+                    if t["name"] == name:
+                        messagebox.showerror("Error", "Template with this name already exists!")
+                        return
+                
+                # Create new template
+                new_template = {
+                    "name": name,
+                    "title": "🔴 Stream Announcement 🔴",
+                    "message": "@everyone\n\n🎮 **Today's Schedule:**\n[today]\n\n📺 Join us at: [link]",
+                    "useTimestamp": True,
+                    "timestampFormat": "R"
+                }
+                
+                self.config["discord"]["templates"].append(new_template)
+                
+                # Update combobox
+                self.template_combo['values'] = [t["name"] for t in self.config["discord"]["templates"]]
+                self.discord_template_var.set(name)
+                self.on_template_selected()
+                
+                dialog.destroy()
+        
+        button_frame = tk.Frame(dialog, bg=bg_color)
+        button_frame.pack(pady=20)
+        
+        tk.Button(
+            button_frame,
+            text="Create",
+            command=create_template,
+            bg="#9146FF",
+            fg="white",
+            padx=20,
+            pady=5
+        ).pack(side=tk.LEFT, padx=5)
+        
+        tk.Button(
+            button_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            bg="#6272a4",
+            fg="white",
+            padx=20,
+            pady=5
+        ).pack(side=tk.LEFT, padx=5)
+    
+    def delete_template(self):
+        """Delete the selected template."""
+        template_name = self.discord_template_var.get()
+        
+        if len(self.config["discord"]["templates"]) <= 1:
+            messagebox.showerror("Error", "You must have at least one template!")
+            return
+        
+        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the template '{template_name}'?"):
+            # Remove template
+            self.config["discord"]["templates"] = [
+                t for t in self.config["discord"]["templates"] if t["name"] != template_name
+            ]
+            
+            # Update combobox
+            self.template_combo['values'] = [t["name"] for t in self.config["discord"]["templates"]]
+            if self.config["discord"]["templates"]:
+                self.discord_template_var.set(self.config["discord"]["templates"][0]["name"])
+                self.on_template_selected()
+    
+    def save_template_changes(self):
+        """Save changes to the current template."""
+        template_name = self.discord_template_var.get()
+        
+        # Find and update the template
+        for template in self.config["discord"]["templates"]:
+            if template["name"] == template_name:
+                template["title"] = self.discord_title_entry.get()
+                template["message"] = self.discord_template_text.get("1.0", tk.END).strip()
+                template["useTimestamp"] = self.use_timestamps.get()
+                
+                # Extract format code from combo selection
+                format_str = self.timestamp_format_var.get()
+                if format_str:
+                    template["timestampFormat"] = format_str.split()[0]
+                
+                messagebox.showinfo("Success", f"Template '{template_name}' has been updated!")
+                self.generate_discord_message()
+                break
+    
+    def update_template_settings(self):
+        """Update template settings and regenerate preview."""
+        self.generate_discord_message()
+    
+    def parse_time_string(self, time_str):
+        """Parse time string to hours and minutes."""
+        import re
+        match = re.match(r'(\d{1,2}):(\d{2})\s*(AM|PM)', time_str, re.IGNORECASE)
+        if not match:
+            return None
+        
+        hours = int(match.group(1))
+        minutes = int(match.group(2))
+        ampm = match.group(3).upper()
+        
+        # Convert to 24-hour format
+        if ampm == 'PM' and hours != 12:
+            hours += 12
+        elif ampm == 'AM' and hours == 12:
+            hours = 0
+        
+        return {'hours': hours, 'minutes': minutes}
+    
+    def get_timestamp(self, date, hours, minutes):
+        """Get Unix timestamp for Discord."""
+        from datetime import datetime
+        d = datetime(date.year, date.month, date.day, hours, minutes, 0)
+        return int(d.timestamp())
     
     def generate_discord_message(self):
         """Generate Discord message based on current settings."""
         try:
-            template_idx = self.discord_template_var.get()
-            if template_idx < len(self.config["discord"]["templates"]):
-                template = self.config["discord"]["templates"][template_idx]
-            else:
-                template = self.config["discord"]["customMessage"]
+            # Get current template from editor
+            message = self.discord_template_text.get("1.0", tk.END).strip()
+            title = self.discord_title_entry.get()
             
-            message = template["message"]
-            title = template["title"]
+            if not message or not title:
+                return
             
-            # Replace variables
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            tomorrow = today + timedelta(days=1)
+            
+            # Get schedule data
+            today_type = self.config["schedule"]["today"]["type"]
+            tomorrow_type = self.config["schedule"]["tomorrow"]["type"]
+            today_schedule = self.config["schedule"]["today"][today_type]
+            tomorrow_schedule = self.config["schedule"]["tomorrow"][tomorrow_type]
+            
+            # Format schedule times based on timestamp setting
+            use_timestamps = self.use_timestamps.get()
+            format_str = self.timestamp_format_var.get()
+            format_char = format_str.split()[0] if format_str else "t"
+            
+            # Format today's times
+            today_times = ""
+            for i, slot in enumerate(today_schedule):
+                if i > 0:
+                    today_times += "\n"
+                
+                if use_timestamps:
+                    # Parse time range
+                    time_parts = slot['time'].split(' - ')
+                    if len(time_parts) == 2:
+                        start_time = self.parse_time_string(time_parts[0])
+                        end_time = self.parse_time_string(time_parts[1])
+                        
+                        if start_time and end_time:
+                            # Check if end time is midnight or past midnight
+                            end_date = today
+                            if end_time['hours'] < start_time['hours'] or (end_time['hours'] == 0 and end_time['minutes'] == 0):
+                                end_date = tomorrow
+                            
+                            start_ts = self.get_timestamp(today, start_time['hours'], start_time['minutes'])
+                            end_ts = self.get_timestamp(end_date, end_time['hours'], end_time['minutes'])
+                            today_times += f"• <t:{start_ts}:{format_char}> to <t:{end_ts}:{format_char}> - **{slot['title']}**: {slot['desc']}"
+                        else:
+                            today_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+                    else:
+                        today_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+                else:
+                    today_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+            
+            # Format tomorrow's times
+            tomorrow_times = ""
+            day_after = tomorrow + timedelta(days=1)
+            for i, slot in enumerate(tomorrow_schedule):
+                if i > 0:
+                    tomorrow_times += "\n"
+                
+                if use_timestamps:
+                    # Parse time range
+                    time_parts = slot['time'].split(' - ')
+                    if len(time_parts) == 2:
+                        start_time = self.parse_time_string(time_parts[0])
+                        end_time = self.parse_time_string(time_parts[1])
+                        
+                        if start_time and end_time:
+                            # Check if end time is midnight or past midnight
+                            end_date = tomorrow
+                            if end_time['hours'] < start_time['hours'] or (end_time['hours'] == 0 and end_time['minutes'] == 0):
+                                end_date = day_after
+                            
+                            start_ts = self.get_timestamp(tomorrow, start_time['hours'], start_time['minutes'])
+                            end_ts = self.get_timestamp(end_date, end_time['hours'], end_time['minutes'])
+                            tomorrow_times += f"• <t:{start_ts}:{format_char}> to <t:{end_ts}:{format_char}> - **{slot['title']}**: {slot['desc']}"
+                        else:
+                            tomorrow_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+                    else:
+                        tomorrow_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+                else:
+                    tomorrow_times += f"• **{slot['time']}** - {slot['title']}: {slot['desc']}"
+            
+            # Dynamic timezone text
+            timezone_text = f"``Times auto-adjust to your timezone!``" if use_timestamps else f"``{self.config['timezone']}``"
+            
+            # Replace placeholders (matching HTML implementation)
             replacements = {
-                "{{link}}": self.config["channel"]["link"],
-                "{{channel}}": self.config["channel"]["name"],
-                "{{timezone}}": self.config["timezone"],
-                "{{today_type}}": self.config["schedule"]["today"]["type"].capitalize(),
-                "{{tomorrow_type}}": self.config["schedule"]["tomorrow"]["type"].capitalize(),
+                "[title]": title,
+                "[today]": today_times,
+                "[tomorrow]": tomorrow_times,
+                "[timezone]": timezone_text,
+                "[link]": self.config["channel"]["link"]
             }
             
-            # Generate schedule text with times
-            today_schedule = self.format_schedule_with_times("today")
-            tomorrow_schedule = self.format_schedule_with_times("tomorrow")
-            replacements["{{schedule}}"] = today_schedule
-            replacements["{{today_schedule}}"] = today_schedule
-            replacements["{{tomorrow_schedule}}"] = tomorrow_schedule
-            
+            output_message = message
             for key, value in replacements.items():
-                message = message.replace(key, value)
-                title = title.replace(key, value)
+                output_message = output_message.replace(key, value)
             
-            # Add timestamps if enabled
-            if template["useTimestamp"] and self.use_timestamps.get():
-                import datetime
-                timestamp = int(datetime.datetime.now().timestamp())
-                format_char = template["timestampFormat"]
-                message = f"<t:{timestamp}:{format_char}>\n\n{message}"
-            
-            full_message = f"**{title}**\n\n{message}"
+            # Final output (title is already in the message template)
             self.discord_output.delete("1.0", tk.END)
-            self.discord_output.insert("1.0", full_message)
+            self.discord_output.insert("1.0", output_message)
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate message: {e}")
     
-    def format_schedule_with_times(self, day):
-        """Format schedule with times for Discord."""
-        schedule_type = self.config["schedule"][day]["type"]
-        schedule_data = self.config["schedule"][day][schedule_type]
-        
-        formatted = []
-        for slot in schedule_data:
-            formatted.append(f"• **{slot['time']}** - {slot['title']}: {slot['desc']}")
-        
-        return "\n".join(formatted)
+    # This method is no longer needed as formatting is done in generate_discord_message
     
     def copy_discord_message(self):
         """Copy Discord message to clipboard."""
@@ -1086,37 +1538,24 @@ class StreamSchedulerManager:
     
     def run(self):
         """Run the application."""
-        self.start_server()
-        time.sleep(1)
+        # Ask user if they want to start the server
+        response = messagebox.askyesno(
+            "Start Server",
+            "Would you like to start the npm server?\n\n" +
+            "This will run 'npm start' in the HTML directory.\n" +
+            "Make sure Node.js and npm are installed."
+        )
+        
+        if response:
+            self.start_server()
+        
         self.create_gui()
         self.generate_discord_message()
         self.root.mainloop()
 
 
-# Flask routes
-manager = None
-
-@app.route('/api/config', methods=['GET'])
-def get_config():
-    """API endpoint to get the current configuration."""
-    if manager:
-        return jsonify(manager.config)
-    return jsonify({"error": "Manager not initialized"}), 500
-
-@app.route('/api/config', methods=['POST'])
-def update_config():
-    """API endpoint to update the configuration."""
-    if manager:
-        data = request.json
-        manager.config.update(data)
-        manager.save_config()
-        return jsonify({"status": "success", "config": manager.config})
-    return jsonify({"error": "Manager not initialized"}), 500
-
-
 def main():
     """Main function."""
-    global manager
     manager = StreamSchedulerManager()
     
     try:
