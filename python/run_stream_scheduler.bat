@@ -9,7 +9,7 @@ REM Activate the virtual environment
 call venv\Scripts\activate.bat
 
 REM Run the Python script
-python StreamSchedulerManager.py
+python StreamSchedulerManagerEnhanced.py
 
 REM Keep the window open if there's an error
 if %ERRORLEVEL% NEQ 0 (
